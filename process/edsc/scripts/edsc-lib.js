@@ -22,7 +22,10 @@ const VALID_STATUSES = new Set([
 ]);
 
 const MAX_README_LINES = 180;
-const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
+const DEFAULT_REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
+const REPO_ROOT = process.env.EDSC_REPO_ROOT
+  ? path.resolve(process.env.EDSC_REPO_ROOT)
+  : DEFAULT_REPO_ROOT;
 const TEMPLATE_ROOT = path.join(REPO_ROOT, "process", "edsc", "templates", "feature");
 const WORK_FEATURES_ROOT = path.join(REPO_ROOT, "work", "features");
 
@@ -73,16 +76,46 @@ function stringifyScalar(value) {
 function parseTopLevelArray(lines, startIndex) {
   const out = [];
   let i = startIndex;
+  let sawList = false;
   while (i < lines.length) {
     const line = lines[i];
-    const match = line.match(/^  -\s*(.*)$/);
+    const match = line.match(/^\s*-\s*(.*)$/);
     if (!match) {
+      if (!line.trim() && sawList) {
+        i += 1;
+        continue;
+      }
       break;
     }
+    sawList = true;
     out.push(parseScalar(match[1]));
     i += 1;
   }
   return { values: out, nextIndex: i };
+}
+
+function parseInlineArray(raw) {
+  const value = (raw || "").trim();
+  if (!value.startsWith("[") || !value.endsWith("]")) {
+    return null;
+  }
+  const inner = value.slice(1, -1).trim();
+  if (!inner) {
+    return [];
+  }
+  return inner.split(",").map((item) => parseScalar(item.trim()));
+}
+
+function resolveNow() {
+  const forced = process.env.EDSC_NOW_ISO;
+  if (!forced) {
+    return new Date();
+  }
+  const date = new Date(forced);
+  if (Number.isNaN(date.getTime())) {
+    throw new Error("Invalid EDSC_NOW_ISO value; expected ISO-8601 timestamp");
+  }
+  return date;
 }
 
 function readText(filePath) {
@@ -104,6 +137,7 @@ function parsePhaseYaml(text) {
     decisions_needed: [],
     open_hypotheses: [],
     invalidations: [],
+    _extra_top_level: [],
   };
 
   let i = 0;
@@ -174,17 +208,44 @@ function parsePhaseYaml(text) {
     if (match) {
       const key = match[1];
       const inlineValue = (match[2] || "").trim();
-      if (inlineValue === "[]" || inlineValue === "") {
-        if (inlineValue === "") {
-          const parsed = parseTopLevelArray(lines, i + 1);
-          state[key] = parsed.values;
-          i = parsed.nextIndex;
-        } else {
-          state[key] = [];
-          i += 1;
-        }
+      if (inlineValue === "[]") {
+        state[key] = [];
+        i += 1;
+      } else if (inlineValue === "") {
+        const parsed = parseTopLevelArray(lines, i + 1);
+        state[key] = parsed.values;
+        i = parsed.nextIndex;
       } else {
-        state[key] = [parseScalar(inlineValue)];
+        const inlineArray = parseInlineArray(inlineValue);
+        if (inlineArray !== null) {
+          state[key] = inlineArray;
+        } else {
+          state[key] = [parseScalar(inlineValue)];
+        }
+        i += 1;
+      }
+      continue;
+    }
+
+    match = line.match(/^([a-zA-Z_][a-zA-Z0-9_-]*):\s*(.*)$/);
+    if (match) {
+      const key = match[1];
+      const inlineValue = (match[2] || "").trim();
+
+      if (inlineValue === "[]") {
+        state._extra_top_level.push({ key, type: "array", values: [] });
+        i += 1;
+      } else if (inlineValue === "") {
+        const parsed = parseTopLevelArray(lines, i + 1);
+        state._extra_top_level.push({ key, type: "array", values: parsed.values });
+        i = parsed.nextIndex;
+      } else {
+        const inlineArray = parseInlineArray(inlineValue);
+        if (inlineArray !== null) {
+          state._extra_top_level.push({ key, type: "array", values: inlineArray });
+        } else {
+          state._extra_top_level.push({ key, type: "scalar", value: parseScalar(inlineValue) });
+        }
         i += 1;
       }
       continue;
@@ -258,6 +319,13 @@ function stringifyPhaseYaml(state) {
     lines.push(`    status: ${status}`);
     lines.push(`    last_verified_at: ${stringifyScalar(lastVerified)}`);
     lines.push(`    inputs_fingerprint: ${stringifyScalar(fingerprint)}`);
+    const knownPhaseKeys = new Set(["status", "last_verified_at", "inputs_fingerprint"]);
+    const extraKeys = Object.keys(phaseState)
+      .filter((key) => !knownPhaseKeys.has(key))
+      .sort((a, b) => a.localeCompare(b));
+    for (const key of extraKeys) {
+      lines.push(`    ${key}: ${stringifyScalar(phaseState[key])}`);
+    }
   }
 
   lines.push("");
@@ -265,6 +333,17 @@ function stringifyPhaseYaml(state) {
   writeTopLevelArray(lines, "decisions_needed", state.decisions_needed || []);
   writeTopLevelArray(lines, "open_hypotheses", state.open_hypotheses || []);
   writeTopLevelArray(lines, "invalidations", state.invalidations || []);
+
+  for (const extra of state._extra_top_level || []) {
+    if (!extra || !extra.key) {
+      continue;
+    }
+    if (extra.type === "array") {
+      writeTopLevelArray(lines, extra.key, extra.values || []);
+    } else {
+      lines.push(`${extra.key}: ${stringifyScalar(extra.value)}`);
+    }
+  }
 
   return `${lines.join("\n")}\n`;
 }
@@ -307,17 +386,41 @@ function parseGateFrontmatter(gateContent) {
       continue;
     }
 
-    if (/^depends_on:\s*$/.test(line)) {
-      const parsed = parseTopLevelArray(lines, i + 1);
-      meta.depends_on = parsed.values.map((v) => String(v));
-      i = parsed.nextIndex;
+    match = line.match(/^depends_on:\s*(.*)$/);
+    if (match) {
+      const inlineValue = (match[1] || "").trim();
+      if (!inlineValue) {
+        const parsed = parseTopLevelArray(lines, i + 1);
+        meta.depends_on = parsed.values.map((v) => String(v));
+        i = parsed.nextIndex;
+        continue;
+      }
+      const inlineArray = parseInlineArray(inlineValue);
+      if (inlineArray !== null) {
+        meta.depends_on = inlineArray.map((v) => String(v));
+      } else {
+        meta.depends_on = [String(parseScalar(inlineValue))];
+      }
+      i += 1;
       continue;
     }
 
-    if (/^required_files:\s*$/.test(line)) {
-      const parsed = parseTopLevelArray(lines, i + 1);
-      meta.required_files = parsed.values.map((v) => String(v));
-      i = parsed.nextIndex;
+    match = line.match(/^required_files:\s*(.*)$/);
+    if (match) {
+      const inlineValue = (match[1] || "").trim();
+      if (!inlineValue) {
+        const parsed = parseTopLevelArray(lines, i + 1);
+        meta.required_files = parsed.values.map((v) => String(v));
+        i = parsed.nextIndex;
+        continue;
+      }
+      const inlineArray = parseInlineArray(inlineValue);
+      if (inlineArray !== null) {
+        meta.required_files = inlineArray.map((v) => String(v));
+      } else {
+        meta.required_files = [String(parseScalar(inlineValue))];
+      }
+      i += 1;
       continue;
     }
 
@@ -508,7 +611,9 @@ function phaseBlocker(status) {
 function checkFeature(featureId, options = {}) {
   const { write = true } = options;
   const state = loadState(featureId);
-  const nowIso = new Date().toISOString();
+  const now = resolveNow();
+  const nowIso = now.toISOString();
+  const nowMs = now.getTime();
   const report = {
     featureId,
     mode: state.mode,
@@ -616,9 +721,9 @@ function checkFeature(featureId, options = {}) {
       meta.ttl_days > 0 &&
       !canRecoverStale
     ) {
-      const lastVerifiedMs = Date.parse(phaseState.last_verified_at);
-      if (!Number.isNaN(lastVerifiedMs)) {
-        const ageMs = Date.now() - lastVerifiedMs;
+        const lastVerifiedMs = Date.parse(phaseState.last_verified_at);
+        if (!Number.isNaN(lastVerifiedMs)) {
+        const ageMs = nowMs - lastVerifiedMs;
         const ttlMs = meta.ttl_days * 24 * 60 * 60 * 1000;
         if (ageMs > ttlMs) {
           result.staleReasons.push(`TTL expired (${meta.ttl_days} days)`);
@@ -635,12 +740,10 @@ function checkFeature(featureId, options = {}) {
       phaseState.inputs_fingerprint = currentFingerprint;
       phaseState.last_verified_at = nowIso;
     } else {
-      if (phaseState.status === "pass") {
-        newStatus = "fail";
-      } else if (phaseState.status === "stale") {
+      if (phaseState.status === "stale") {
         newStatus = "stale";
-      } else if (phaseState.status === "in_progress") {
-        newStatus = "in_progress";
+      } else if (isActivePhase) {
+        newStatus = "fail";
       } else {
         newStatus = "not_started";
       }
@@ -829,7 +932,7 @@ function invalidateFeature(featureId, phase, reason) {
     state.invalidations = [];
   }
 
-  const stamp = new Date().toISOString();
+  const stamp = resolveNow().toISOString();
   state.invalidations.push(`${stamp} | ${phase} | ${reason.trim()}`);
 
   const phaseIndex = PHASES.indexOf(phase);

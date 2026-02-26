@@ -47,6 +47,9 @@ test("check exits non-zero when active gate result is FAIL", (t) => {
   assert.equal(check.status, 1);
   assert.match(check.stdout, /Gate result is FAIL for an active phase/i);
   assert.match(check.stdout, /Result: FAIL/i);
+
+  const phaseYaml = readPhaseYaml(fixture, featureId);
+  assert.equal(getPhaseStatus(phaseYaml, "00-intake"), "fail");
 });
 
 test("dependency edit marks dependent phases stale and propagates stale downstream", (t) => {
@@ -167,4 +170,69 @@ test("apply-deltas is idempotent on repeated runs", (t) => {
   const targetContent = fs.readFileSync(targetPath, "utf8");
   const markerCount = (targetContent.match(/edsc-delta:/g) || []).length;
   assert.equal(markerCount, 1);
+});
+
+test("check preserves unknown top-level phase.yaml fields", (t) => {
+  const fixture = createRepoFixture(t);
+  const featureId = "F-2026-02-test-phase-extra-fields";
+  scaffoldFixtureFeature(fixture, featureId);
+
+  const phaseYamlPath = featurePath(fixture, featureId, "phase.yaml");
+  fs.appendFileSync(
+    phaseYamlPath,
+    "\ncustom_meta: keep-me\ncustom_list:\n  - alpha\n  - beta\n",
+    "utf8"
+  );
+
+  setGateResult(fixture, featureId, "00-intake", "PASS");
+  const check = runEdsc(fixture, ["check", featureId]);
+  assertOk(check, "check should pass and preserve extra fields");
+
+  const updated = fs.readFileSync(phaseYamlPath, "utf8");
+  assert.match(updated, /^custom_meta:\s*keep-me$/m);
+  assert.match(updated, /^custom_list:\s*$/m);
+  assert.match(updated, /^\s*-\s*alpha$/m);
+  assert.match(updated, /^\s*-\s*beta$/m);
+});
+
+test("gate frontmatter accepts inline array lists", (t) => {
+  const fixture = createRepoFixture(t);
+  const featureId = "F-2026-02-test-inline-frontmatter";
+  scaffoldFixtureFeature(fixture, featureId);
+
+  const gatePath = featurePath(fixture, featureId, "00-intake", "gate.md");
+  const original = fs.readFileSync(gatePath, "utf8");
+  const updated = original
+    .replace(
+      "depends_on:\n  - ../appendix/repro.md",
+      "depends_on: [../appendix/repro.md]"
+    )
+    .replace(
+      "required_files:\n  - README.md\n  - gate.md\n  - appendix/PRD.md",
+      "required_files: [README.md, gate.md, appendix/PRD.md]"
+    )
+    .replace(/^Result:\s*FAIL\s*$/m, "Result: PASS");
+  fs.writeFileSync(gatePath, updated, "utf8");
+
+  const check = runEdsc(fixture, ["check", featureId]);
+  assertOk(check, "inline frontmatter arrays should be parsed correctly");
+});
+
+test("TTL checks can be made deterministic with EDSC_NOW_ISO", (t) => {
+  const fixture = createRepoFixture(t);
+  const featureId = "F-2026-02-test-ttl-now";
+  scaffoldFixtureFeature(fixture, featureId);
+
+  setGateResult(fixture, featureId, "00-intake", "PASS");
+
+  const first = runEdsc(fixture, ["check", featureId], {
+    EDSC_NOW_ISO: "2026-01-01T00:00:00.000Z",
+  });
+  assertOk(first, "initial fixed-time check should pass");
+
+  const second = runEdsc(fixture, ["check", featureId], {
+    EDSC_NOW_ISO: "2026-02-15T00:00:00.000Z",
+  });
+  assert.equal(second.status, 1);
+  assert.match(second.stdout, /TTL expired \(30 days\)/i);
 });
