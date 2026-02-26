@@ -5,6 +5,7 @@ Start here, then follow links:
 - `docs/index.md`: full doc map.
 - `docs/edsc-gap-analysis.md`: EDSC template gaps addressed and open ambiguities.
 - `process/edsc/README.md`: how to run EDSC.
+- `skills/edsc-bun-orchestrator/SKILL.md`: bun-first agent workflow for EDSC.
 - `process/edsc/references/epistemology.md`: verification framing.
 - `process/edsc/references/example-feature.md`: worked example.
 

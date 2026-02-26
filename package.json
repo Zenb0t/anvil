@@ -2,7 +2,7 @@
   "name": "anvil-edsc-tests",
   "private": true,
   "scripts": {
-    "test": "node --test",
-    "edsc:check": "node process/edsc/scripts/edsc.js check --all"
+    "test": "bun test",
+    "edsc:check": "bun process/edsc/scripts/edsc.js check --all"
   }
 }

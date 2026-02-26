@@ -17,13 +17,13 @@ PRD -> Framing -> Spec -> ADR/contracts -> Verification + Oracle -> Implementati
 Run from repo root:
 
 ```bash
-node process/edsc/scripts/edsc.js scaffold <feature-id>
-node process/edsc/scripts/edsc.js status <feature-id>
-node process/edsc/scripts/edsc.js check <feature-id>
-node process/edsc/scripts/edsc.js check --all
-node process/edsc/scripts/edsc.js advance <feature-id> --to <phase>
-node process/edsc/scripts/edsc.js invalidate <feature-id> --phase <phase> --reason "..."
-node process/edsc/scripts/edsc.js apply-deltas <feature-id>
+bun process/edsc/scripts/edsc.js scaffold <feature-id>
+bun process/edsc/scripts/edsc.js status <feature-id>
+bun process/edsc/scripts/edsc.js check <feature-id>
+bun process/edsc/scripts/edsc.js check --all
+bun process/edsc/scripts/edsc.js advance <feature-id> --to <phase>
+bun process/edsc/scripts/edsc.js invalidate <feature-id> --phase <phase> --reason "..."
+bun process/edsc/scripts/edsc.js apply-deltas <feature-id>
 ```
 
 ## Operational Rules

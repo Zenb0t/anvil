@@ -18,6 +18,7 @@ This repository uses docs as a system of record.
 
 - `process/edsc/templates/feature/`: canonical templates for all phases.
 - `process/edsc/prompts/`: role prompt boundaries.
+- `skills/edsc-bun-orchestrator/SKILL.md`: agent skill for bun-based EDSC execution.
 
 ## Oracle Separation
 

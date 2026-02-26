@@ -1,7 +1,9 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const { spawnSync } = require("node:child_process");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const test = require("node:test");
 
@@ -235,4 +237,28 @@ test("TTL checks can be made deterministic with EDSC_NOW_ISO", (t) => {
   });
   assert.equal(second.status, 1);
   assert.match(second.stdout, /TTL expired \(30 days\)/i);
+});
+
+test("powershell skill wrapper runs from repo root and fails outside repo root", () => {
+  if (process.platform !== "win32") {
+    return;
+  }
+
+  const wrapper = path.resolve("skills", "edsc-bun-orchestrator", "scripts", "edsc-bun.ps1");
+
+  const ok = spawnSync(
+    "powershell",
+    ["-ExecutionPolicy", "Bypass", "-File", wrapper, "--help"],
+    { cwd: path.resolve("."), encoding: "utf8" }
+  );
+  assert.equal(ok.status, 0, `wrapper should succeed in repo root\nstderr:\n${ok.stderr}`);
+  assert.match(ok.stdout, /Usage:/i);
+
+  const outside = spawnSync(
+    "powershell",
+    ["-ExecutionPolicy", "Bypass", "-File", wrapper, "--help"],
+    { cwd: os.tmpdir(), encoding: "utf8" }
+  );
+  assert.notEqual(outside.status, 0, "wrapper should fail outside repo root");
+  assert.match(outside.stderr, /Could not find EDSC CLI/i);
 });

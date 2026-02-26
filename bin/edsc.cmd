@@ -1,2 +1,2 @@
 @echo off
-node "%~dp0\..\process\edsc\scripts\edsc.js" %*
+bun "%~dp0\..\process\edsc\scripts\edsc.js" %*
