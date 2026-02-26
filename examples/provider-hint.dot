@@ -1,6 +1,0 @@
-digraph provider_hint {
-  start [shape=Mdiamond]
-  choose [shape=box, prompt="test provider routing", llm_provider="anthropic"]
-  done [shape=Msquare]
-  start -> choose -> done
-}

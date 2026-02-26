@@ -1,9 +1,0 @@
-digraph goal_gate_fail {
-  rankdir=LR
-
-  start [shape=Mdiamond]
-  bad   [shape=parallelogram, command="this-command-does-not-exist", goal_gate=true]
-  done  [shape=Msquare]
-
-  start -> bad -> done
-}
