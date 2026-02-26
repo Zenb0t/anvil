@@ -1,0 +1,13 @@
+# OS / editor artifacts
+.DS_Store
+Thumbs.db
+*.lnk
+
+# Runtime artifacts
+*.log
+coverage/
+dist/
+
+# Bun / Node caches
+node_modules/
+.bun/
