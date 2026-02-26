@@ -1,0 +1,44 @@
+dataDir: ~/.agent-orchestrator
+worktreeDir: ~/.worktrees
+port: 3000
+defaults:
+  runtime: tmux
+  agent: claude-code
+  workspace: worktree
+  notifiers:
+    - desktop
+projects:
+  my-project:
+    repo: owner/repo
+    path: ~/my-project
+    defaultBranch: main
+    agentRules: "Always run tests before pushing.\r
+
+      Use conventional commits (feat:, fix:, chore:, docs:, refactor:, test:).\r
+
+      Link issue numbers in commit messages.\r
+
+      Write clear commit messages that explain WHY, not just WHAT.
+
+
+      Use TypeScript strict mode.\r
+
+      Use ESM modules with .js extensions in imports (e.g., import { foo } from
+      \"./bar.js\").\r
+
+      Use node: prefix for built-in modules (e.g., import { readFile } from
+      \"node:fs\").\r
+
+      Prefer const over let, never use var.\r
+
+      Use type imports for type-only imports: import type { Foo } from
+      \"./bar.js\".\r
+
+      No any types - use unknown with type guards instead.
+
+
+      Before pushing, run these commands:
+
+      - npm run typecheck
+
+      - npm run lint"
