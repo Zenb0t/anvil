@@ -1,0 +1,11 @@
+deltas:
+  - type: template_change
+    target: "02-spec/README.md"
+    change: "Add section: Illegal state transitions"
+    reason: "Late hardening found missing edge cases"
+    evidence: "PR #000"
+  - type: gate_change
+    target: "04-verification/gate.md"
+    change: "Require at least one refutation test for each critical invariant"
+    reason: "Oracle lacked negative cases"
+    evidence: "Issue #000"

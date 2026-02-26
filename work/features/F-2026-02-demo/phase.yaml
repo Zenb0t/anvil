@@ -1,0 +1,42 @@
+feature_id: F-2026-02-demo
+mode: complicated
+current_phase: 03-arch
+
+phases:
+  00-intake:
+    status: pass
+    last_verified_at: "2026-02-26T04:58:55.846Z"
+    inputs_fingerprint: "sha256:2a0cbb2ab17f02d5ea295b99b9722f030f1a3670048b0ea8590ff36c686dd039"
+  01-framing:
+    status: pass
+    last_verified_at: "2026-02-26T04:58:55.846Z"
+    inputs_fingerprint: "sha256:c7502383cea25a6c2f784b1b72f0b863dea0bffa5979c3bc1e338b582ae0f88b"
+  02-spec:
+    status: pass
+    last_verified_at: "2026-02-26T04:58:55.846Z"
+    inputs_fingerprint: "sha256:4de432203ac557912fcff916004927e2dec63a8f8f615180b86900597c1b84c7"
+  03-arch:
+    status: pass
+    last_verified_at: "2026-02-26T04:58:55.846Z"
+    inputs_fingerprint: "sha256:9f0debe2b20307e426731e84bc2d07db1e1c21beb8ba4a140cc06b16ab66ec1a"
+  04-verification:
+    status: not_started
+    last_verified_at: null
+    inputs_fingerprint: null
+  05-implementation:
+    status: not_started
+    last_verified_at: null
+    inputs_fingerprint: null
+  06-hardening:
+    status: not_started
+    last_verified_at: null
+    inputs_fingerprint: null
+  07-release-learning:
+    status: not_started
+    last_verified_at: null
+    inputs_fingerprint: null
+
+open_questions: []
+decisions_needed: []
+open_hypotheses: []
+invalidations: []

@@ -1,0 +1,8 @@
+{
+  "name": "anvil-edsc-tests",
+  "private": true,
+  "scripts": {
+    "test": "node --test",
+    "edsc:check": "node process/edsc/scripts/edsc.js check --all"
+  }
+}

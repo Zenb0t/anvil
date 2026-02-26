@@ -1,0 +1,26 @@
+name: edsc-check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  edsc-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run EDSC tests
+        run: node --test
+
+      - name: Run EDSC check
+        run: node process/edsc/scripts/edsc.js check --all
