@@ -1,4 +1,0 @@
-interface:
-  display_name: "EDSC Bun Orchestrator"
-  short_description: "Run and govern the EDSC phase workflow via bun commands."
-  default_prompt: "Use this skill to scaffold, check, advance, invalidate, and apply deltas for EDSC features with bun-based commands."
