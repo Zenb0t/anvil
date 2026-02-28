@@ -15,6 +15,8 @@ This repository uses docs as a system of record.
   - `anvil status <id>` — print phase status
   - `anvil check <id>` — validate gates
   - `anvil advance <id>` — move to next phase
+  - `anvil list` — list all features with effective phase and status
+  - `anvil lint [<id>]` — validate process artifact format and structure
 
 ## Active Work
 

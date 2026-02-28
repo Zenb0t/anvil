@@ -38,9 +38,8 @@ cmd_init() {
 
   cp -r "$TEMPLATE_DIR" "$dest"
 
-  # Replace placeholder with actual feature ID
-  find "$dest" -type f -name '*.md' -exec sed -i "s/{{FEATURE_ID}}/$id/g" {} +
-  sed -i "s/{{FEATURE_ID}}/$id/" "$dest/state.yaml"
+  # Replace placeholder with actual feature ID in all files
+  find "$dest" -type f -exec sed -i "s/{{FEATURE_ID}}/$id/g" {} +
 
   echo "Feature $id scaffolded at $dest"
 }
