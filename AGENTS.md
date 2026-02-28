@@ -4,8 +4,9 @@ Start here, then follow links:
 
 - `docs/index.md`: full doc map.
 - `process/anvil/README.md`: how ANVIL works (5 phases, 2 roles, gating).
-- `skills/anvil/SKILL.md`: orchestrator skill for autonomous phase management.
-- `skills/anvil/prompts/`: phase-specific prompts (define, spec, verify, build, ship).
+- `.claude/skills/anvil/SKILL.md`: canonical orchestrator skill for autonomous phase management.
+- `.claude/skills/anvil/prompts/`: canonical phase-specific prompts (define, spec, verify, build, ship).
+- `skills/anvil/`: generated mirror (`bin/sync-anvil-skill sync`).
 
 When resuming a feature:
 

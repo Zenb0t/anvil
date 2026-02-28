@@ -9,6 +9,8 @@ Thanks for contributing.
    - `bun test`
 3. Run process checks:
    - `bun process/edsc/scripts/edsc.js check --all`
+4. Validate ANVIL skill mirror consistency:
+   - `bin/sync-anvil-skill check`
 
 ## Pull Requests
 
