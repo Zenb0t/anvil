@@ -6,7 +6,7 @@ set -e
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TEMPLATE_DIR="$REPO_ROOT/process/anvil/templates/feature"
-FEATURES_DIR="$REPO_ROOT/work/features"
+FEATURES_DIR="${FEATURES_DIR:-$REPO_ROOT/work/features}"
 PHASES="0-define 1-spec 2-verify 3-build 4-ship"
 
 usage() {
@@ -19,6 +19,7 @@ Commands:
   check <id>      Validate current gate (files, checklist, staleness)
   advance <id>    Move to next phase (runs check first)
   list            List all features with effective phase and gate status
+  lint [<id>]     Validate process artifact format and structure
 
 EOF
   exit 1
@@ -444,6 +445,233 @@ update_state() {
   fi
 }
 
+# --- lint ---
+cmd_lint() {
+  id="$1"
+  issues=""
+  issue_count=0
+
+  # Security: reject directory traversal
+  if [ -n "$id" ]; then
+    case "$id" in
+      *..*)
+        echo "ERROR: invalid feature ID (directory traversal rejected)" >&2
+        exit 1
+        ;;
+    esac
+  fi
+
+  # Handle missing FEATURES_DIR
+  if [ ! -d "$FEATURES_DIR" ]; then
+    exit 0
+  fi
+
+  # Build list of features to lint
+  if [ -n "$id" ]; then
+    fdir="$(feature_dir "$id")"
+    if [ ! -d "$fdir" ]; then
+      echo "ERROR: Feature $id not found at $fdir" >&2
+      exit 1
+    fi
+    feature_list="$id"
+  else
+    feature_list=""
+    for dir in "$FEATURES_DIR"/*/; do
+      [ -d "$dir" ] || continue
+      fid="$(basename "$dir")"
+      feature_list="$feature_list $fid"
+    done
+  fi
+
+  for fid in $feature_list; do
+    fdir="$(feature_dir "$fid")"
+
+    # TMPL-STATE: check state.yaml exists
+    if [ ! -f "$fdir/state.yaml" ]; then
+      if [ -n "$id" ]; then
+        # Specific ID requested — report as TMPL-STATE issue
+        echo "$fid root TMPL-STATE state.yaml missing"
+        issue_count=$((issue_count + 1))
+      else
+        # Scanning all features — warn and skip
+        echo "warning: $fid has no state.yaml, skipping" >&2
+        continue
+      fi
+    fi
+
+    # TMPL-PHASE: check each phase dir and gate.md
+    for phase in $PHASES; do
+      pdir="$fdir/$phase"
+      if [ ! -d "$pdir" ]; then
+        echo "$fid $phase TMPL-PHASE phase directory missing"
+        issue_count=$((issue_count + 1))
+        continue
+      fi
+      if [ ! -f "$pdir/gate.md" ]; then
+        echo "$fid $phase TMPL-PHASE gate.md missing"
+        issue_count=$((issue_count + 1))
+        continue
+      fi
+
+      gate="$pdir/gate.md"
+
+      # --- GATE-FRONTMATTER ---
+      has_frontmatter=false
+      fm_phase=""
+      fm_needs=""
+      fm_produces=""
+      # Check for --- delimited frontmatter
+      first_line="$(sed -n '1p' "$gate")"
+      if [ "$first_line" = "---" ]; then
+        # Find closing ---
+        closing_line="$(sed -n '2,$ { /^---$/= }' "$gate" | head -1)"
+        if [ -n "$closing_line" ]; then
+          has_frontmatter=true
+          # Extract frontmatter fields
+          fm_content="$(sed -n "2,$((closing_line - 1))p" "$gate")"
+          fm_phase="$(echo "$fm_content" | sed -n 's/^phase: *//p')"
+          fm_needs="$(echo "$fm_content" | sed -n 's/^needs: *\[\(.*\)\]/\1/p')"
+          fm_produces="$(echo "$fm_content" | sed -n 's/^produces: *\[\(.*\)\]/\1/p')"
+
+          if [ -z "$fm_phase" ]; then
+            echo "$fid $phase GATE-FRONTMATTER frontmatter missing phase field"
+            issue_count=$((issue_count + 1))
+          fi
+          # Check needs field exists
+          if ! echo "$fm_content" | grep -q '^needs:'; then
+            echo "$fid $phase GATE-FRONTMATTER frontmatter missing needs field"
+            issue_count=$((issue_count + 1))
+          fi
+          # Check produces field exists
+          if ! echo "$fm_content" | grep -q '^produces:'; then
+            echo "$fid $phase GATE-FRONTMATTER frontmatter missing produces field"
+            issue_count=$((issue_count + 1))
+          fi
+        else
+          echo "$fid $phase GATE-FRONTMATTER frontmatter not properly closed with ---"
+          issue_count=$((issue_count + 1))
+        fi
+      else
+        echo "$fid $phase GATE-FRONTMATTER missing YAML frontmatter"
+        issue_count=$((issue_count + 1))
+      fi
+
+      # --- GATE-STATUS ---
+      status_line="$(grep '^Status:' "$gate" | head -1 || true)"
+      gate_status=""
+      if [ -n "$status_line" ]; then
+        status_value="$(echo "$status_line" | sed 's/^Status: *//')"
+        case "$status_value" in
+          PENDING|PASS|FAIL) gate_status="$status_value" ;;
+          *)
+            echo "$fid $phase GATE-STATUS invalid status '$status_value' (must be PENDING, PASS, or FAIL)"
+            issue_count=$((issue_count + 1))
+            ;;
+        esac
+      else
+        echo "$fid $phase GATE-STATUS missing Status line"
+        issue_count=$((issue_count + 1))
+      fi
+
+      # --- GATE-CHECKLIST ---
+      # Every line matching ^- \[ must be exactly - [ ] or - [x]
+      check_lines="$(grep '^- \[' "$gate" || true)"
+      if [ -n "$check_lines" ]; then
+        bad_checks="$(echo "$check_lines" | grep -v '^- \[ \] ' | grep -v '^- \[x\] ' || true)"
+        if [ -n "$bad_checks" ]; then
+          echo "$bad_checks" | while IFS= read -r line; do
+            echo "$fid $phase GATE-CHECKLIST malformed checkbox: $line"
+          done
+          bad_count="$(echo "$bad_checks" | wc -l | tr -d ' ')"
+          issue_count=$((issue_count + bad_count))
+        fi
+      fi
+
+      # --- GATE-RATIONALE (only when PASS) ---
+      if [ "$gate_status" = "PASS" ]; then
+        # Extract rationale content: lines after "Rationale:" until next section or EOF
+        rationale_content="$(sed -n '/^Rationale:/,/^[A-Z][a-z]*:/{//!p}' "$gate" | sed '/^$/d' || true)"
+        if [ -z "$rationale_content" ]; then
+          # Also try: everything after Rationale: to end of file minus sections
+          rationale_content="$(sed -n '/^Rationale:/{n;p;}' "$gate" | sed '/^$/d' || true)"
+        fi
+        if [ -z "$rationale_content" ]; then
+          echo "$fid $phase GATE-RATIONALE rationale is empty but status is PASS"
+          issue_count=$((issue_count + 1))
+        else
+          # Must contain a file ref (path.ext) or backtick-quoted term
+          has_ref=false
+          if echo "$rationale_content" | grep -qE '`[^`]+`'; then
+            has_ref=true
+          fi
+          if echo "$rationale_content" | grep -qE '[a-zA-Z0-9/_.-]+\.[a-zA-Z]'; then
+            has_ref=true
+          fi
+          if ! $has_ref; then
+            echo "$fid $phase GATE-RATIONALE rationale must contain a file reference or backtick-quoted term"
+            issue_count=$((issue_count + 1))
+          fi
+        fi
+      fi
+
+      # --- GATE-FALSIFICATION (only for 2-verify and 4-ship when PASS) ---
+      case "$phase" in
+        2-verify|4-ship)
+          if [ "$gate_status" = "PASS" ]; then
+            if ! grep -q '^Falsification:' "$gate"; then
+              echo "$fid $phase GATE-FALSIFICATION missing Falsification section"
+              issue_count=$((issue_count + 1))
+            else
+              # Must have Tried/Observed pairs with content
+              fals_section="$(sed -n '/^Falsification:/,/^[A-Z][a-z]*:/p' "$gate" | grep -v '^Falsification:' | grep -v '^[A-Z][a-z]*:' || true)"
+              if [ -z "$fals_section" ]; then
+                fals_section="$(sed -n '/^Falsification:/,$p' "$gate" | tail -n +2 || true)"
+              fi
+              has_tried="$(echo "$fals_section" | grep -c 'Tried:' || true)"
+              has_observed="$(echo "$fals_section" | grep -c 'Observed:' || true)"
+              if [ "$has_tried" -eq 0 ] || [ "$has_observed" -eq 0 ]; then
+                echo "$fid $phase GATE-FALSIFICATION missing Tried/Observed pairs"
+                issue_count=$((issue_count + 1))
+              fi
+            fi
+          fi
+          ;;
+      esac
+
+      # --- XREF-NEEDS ---
+      if $has_frontmatter && [ -n "$fm_needs" ]; then
+        echo "$fm_needs" | tr ',' '\n' | tr -d ' ' | while IFS= read -r need_path; do
+          [ -z "$need_path" ] && continue
+          target="$pdir/$need_path"
+          if [ ! -e "$target" ]; then
+            echo "$fid $phase XREF-NEEDS needs path $need_path does not exist"
+          fi
+        done
+      fi
+
+      # --- XREF-PRODUCES (only when PASS) ---
+      if [ "$gate_status" = "PASS" ] && $has_frontmatter && [ -n "$fm_produces" ]; then
+        echo "$fm_produces" | tr ',' '\n' | tr -d ' ' | while IFS= read -r prod_path; do
+          [ -z "$prod_path" ] && continue
+          target="$pdir/$prod_path"
+          if [ ! -e "$target" ]; then
+            echo "$fid $phase XREF-PRODUCES produces path $prod_path missing but gate is PASS"
+          fi
+        done
+      fi
+    done
+  done
+
+  # Determine exit code: count actual output lines
+  # Re-run in a subshell to capture output (we've been printing directly)
+  # Actually, we've been printing directly to stdout, so we need a different approach
+  # Let's exit based on issue_count
+  if [ "$issue_count" -gt 0 ]; then
+    exit 1
+  fi
+  exit 0
+}
+
 # --- main ---
 [ $# -lt 1 ] && usage
 cmd="$1"; shift
@@ -454,5 +682,6 @@ case "$cmd" in
   check)   cmd_check "$@" ;;
   advance) cmd_advance "$@" ;;
   list)    cmd_list "$@" ;;
+  lint)    cmd_lint "$@" ;;
   *)       usage ;;
 esac
