@@ -4,7 +4,7 @@
 
 Anvil is a simplified agentic SDLC that fuses rigorous phase-gating with practical simplicity. It drives features through five phases:
 
-`Define → Spec → Verify → Build → Ship`
+`Define -> Spec -> Verify -> Build -> Ship`
 
 It includes:
 - A zero-dependency POSIX shell CLI for scaffolding, checking, and advancing features.
@@ -40,13 +40,23 @@ anvil check <feature-id>      # Validate current gate (files, checklist, stalene
 anvil advance <feature-id>    # Move to next phase (runs check first)
 ```
 
+## Install CLI Symlink
+
+```bash
+make install    # Symlink bin/anvil to ~/.local/bin/anvil
+make uninstall  # Remove ~/.local/bin/anvil if present
+```
+
+If `~/.local/bin` is not on your PATH, add it in your shell profile.
+
 ## Repository Layout
 
-- `process/anvil/` — ANVIL process definition, templates, and README.
-- `skills/anvil/` — Orchestrator skill and phase prompts.
-- `bin/anvil` — CLI entry point (POSIX shell script).
-- `work/features/` — Generated feature workspaces.
-- `docs/` — Documentation index.
+- `process/anvil/` - ANVIL process definition, templates, and README.
+- `skills/anvil/` - Orchestrator skill and phase prompts.
+- `bin/anvil` - CLI entry point (POSIX shell script).
+- `Makefile` - install/uninstall helper targets for `~/.local/bin/anvil`.
+- `work/features/` - Generated feature workspaces.
+- `docs/` - Documentation index.
 
 ## Contributing
 
