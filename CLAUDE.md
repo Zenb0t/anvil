@@ -8,6 +8,7 @@ Agent Navigated Verified Implementation Lifecycle.
 
 ## Project Conventions
 
+- Anvil is consumed by LLM agents, not humans — optimize all output for context density and token efficiency
 - CLI lives at `bin/anvil` (POSIX shell)
 - Process definition in `process/anvil/`
 - Feature workspaces in `work/features/`
