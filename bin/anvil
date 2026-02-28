@@ -367,12 +367,8 @@ validate_gate() {
     2-verify|4-ship)
       if ! grep -q '^Falsification:' "$gate"; then
         errors="${errors}Missing Falsification section\n"
-      elif ! grep -qE 'Tried:.*[^ ].*Observed:' "$gate" && ! (grep -q 'Tried:' "$gate" && grep -q 'Observed:' "$gate"); then
-        fals_content="$(sed -n '/^Falsification:/,/^[A-Z]/p' "$gate" | grep -c 'Tried:.*→.*Observed:' || true)"
-        empty_fals="$(sed -n '/^Falsification:/,/^[A-Z]/p' "$gate" | grep -c 'Tried: →' || true)"
-        if [ "$fals_content" -eq 0 ] || [ "$fals_content" -eq "$empty_fals" ]; then
-          errors="${errors}Falsification needs concrete Tried/Observed pairs\n"
-        fi
+      elif [ "$(has_concrete_falsification "$gate")" != "VALID" ]; then
+        errors="${errors}Falsification needs concrete Tried/Observed pairs\n"
       fi
       ;;
   esac
@@ -426,6 +422,28 @@ check_staleness() {
     fi
   done
   echo "CLEAN"
+}
+
+# Validate that falsification has non-empty Tried and Observed content
+has_concrete_falsification() {
+  gate="$1"
+
+  fals_section="$(sed -n '/^Falsification:/,/^[A-Z][a-z]*:/p' "$gate" | tail -n +2 | sed '$d' || true)"
+  if [ -z "$fals_section" ]; then
+    fals_section="$(sed -n '/^Falsification:/,$p' "$gate" | tail -n +2 || true)"
+  fi
+
+  tried_values="$(echo "$fals_section" | sed -n 's/.*Tried:[[:space:]]*//p' | sed 's/[[:space:]]*Observed:.*//' || true)"
+  observed_values="$(echo "$fals_section" | sed -n 's/.*Observed:[[:space:]]*//p' || true)"
+
+  tried_count="$(echo "$tried_values" | grep -Evc '^[[:space:]]*$' || true)"
+  observed_count="$(echo "$observed_values" | grep -Evc '^[[:space:]]*$' || true)"
+
+  if [ "$tried_count" -gt 0 ] && [ "$observed_count" -gt 0 ]; then
+    echo "VALID"
+  else
+    echo "INVALID"
+  fi
 }
 
 # Update state.yaml for a phase
@@ -622,14 +640,7 @@ cmd_lint() {
               echo "$fid $phase GATE-FALSIFICATION missing Falsification section"
               issue_count=$((issue_count + 1))
             else
-              # Must have Tried/Observed pairs with content
-              fals_section="$(sed -n '/^Falsification:/,/^[A-Z][a-z]*:/p' "$gate" | grep -v '^Falsification:' | grep -v '^[A-Z][a-z]*:' || true)"
-              if [ -z "$fals_section" ]; then
-                fals_section="$(sed -n '/^Falsification:/,$p' "$gate" | tail -n +2 || true)"
-              fi
-              has_tried="$(echo "$fals_section" | grep -c 'Tried:' || true)"
-              has_observed="$(echo "$fals_section" | grep -c 'Observed:' || true)"
-              if [ "$has_tried" -eq 0 ] || [ "$has_observed" -eq 0 ]; then
+              if [ "$(has_concrete_falsification "$gate")" != "VALID" ]; then
                 echo "$fid $phase GATE-FALSIFICATION missing Tried/Observed pairs"
                 issue_count=$((issue_count + 1))
               fi
