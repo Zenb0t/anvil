@@ -110,7 +110,14 @@ After the Builder subagent completes:
 
 ## Gate Format
 
-Rationale content must be on the line AFTER `Rationale:` (not on the same line) and must reference a file path or backtick-quoted term.
+Rationale supports both inline and next-line formats. Must reference a file path or backtick-quoted term.
+
+```
+Status: PASS
+Rationale: `spec.md` covers all behavioral requirements...
+```
+
+or:
 
 ```
 Status: PASS
