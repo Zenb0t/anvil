@@ -15,10 +15,12 @@ Usage: anvil <command> [feature-id]
 
 Commands:
   init <id>       Scaffold a new feature from templates
-  status <id>     Print phase status and blockers
-  check <id>      Validate current gate (files, checklist, staleness)
+  status <id> [--json]
+                  Print phase status and blockers
+  check <id> [--json]
+                  Validate current gate (files, checklist, staleness)
   advance <id>    Move to next phase (runs check first)
-  list            List all features with effective phase and gate status
+  list [--json]   List all features with effective phase and gate status
   lint [<id>]     Validate process artifact format and structure
 
 EOF
@@ -28,6 +30,57 @@ EOF
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 feature_dir() { echo "$FEATURES_DIR/$1"; }
+
+json_escape() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+json_quote() {
+  escaped="$(json_escape "$1")"
+  printf '"%s"' "$escaped"
+}
+
+json_array_from_lines() {
+  lines="$1"
+  items=""
+  while IFS= read -r line; do
+    [ -z "$line" ] && continue
+    quoted="$(json_quote "$line")"
+    if [ -n "$items" ]; then
+      items="$items,$quoted"
+    else
+      items="$quoted"
+    fi
+  done <<EOF
+$lines
+EOF
+  printf '[%s]' "$items"
+}
+
+json_append_item() {
+  existing="$1"
+  item="$2"
+  if [ -n "$existing" ]; then
+    printf '%s,%s' "$existing" "$item"
+  else
+    printf '%s' "$item"
+  fi
+}
+
+json_optional_string() {
+  value="$1"
+  if [ -n "$value" ]; then
+    json_quote "$value"
+  else
+    printf 'null'
+  fi
+}
+
+get_state_anchor() {
+  dir="$1"
+  phase="$2"
+  grep "  $phase:" "$dir/state.yaml" | grep -o 'anchor: [a-f0-9]*' | cut -d' ' -f2 || true
+}
 
 # --- init ---
 cmd_init() {
@@ -47,21 +100,50 @@ cmd_init() {
 
 # --- status ---
 cmd_status() {
-  id="$1"
-  [ -z "$id" ] && die "Usage: anvil status <feature-id>"
+  json_mode=false
+  id=""
+  for arg in "$@"; do
+    case "$arg" in
+      --json) json_mode=true ;;
+      *)
+        if [ -z "$id" ]; then
+          id="$arg"
+        else
+          die "Usage: anvil status <feature-id> [--json]"
+        fi
+        ;;
+    esac
+  done
+
+  [ -z "$id" ] && die "Usage: anvil status <feature-id> [--json]"
   dir="$(feature_dir "$id")"
   [ -d "$dir" ] || die "Feature $id not found at $dir"
   [ -f "$dir/state.yaml" ] || die "No state.yaml in $dir"
 
-  echo "Feature: $id"
+  if ! $json_mode; then
+    echo "Feature: $id"
+  fi
 
   # Find effective phase (lowest non-CLEAN)
   effective=""
+  phase_items=""
   for phase in $PHASES; do
+    phase_status=""
+    phase_detail=""
+    anchor=""
+
     gate="$dir/$phase/gate.md"
     if [ ! -f "$gate" ]; then
       [ -z "$effective" ] && effective="$phase"
-      echo "  $phase: MISSING (no gate.md)"
+      phase_status="MISSING"
+      phase_detail="no gate.md"
+      if ! $json_mode; then
+        echo "  $phase: MISSING (no gate.md)"
+      fi
+
+      errors_json='["no gate.md"]'
+      item="{\"phase\":$(json_quote "$phase"),\"status\":$(json_quote "$phase_status"),\"anchor\":null,\"errors\":$errors_json}"
+      phase_items="$(json_append_item "$phase_items" "$item")"
       continue
     fi
 
@@ -69,120 +151,249 @@ cmd_status() {
     status="$(echo "$result" | head -1)"
 
     # Read anchor from state.yaml
-    anchor="$(grep "  $phase:" "$dir/state.yaml" | grep -o 'anchor: [a-f0-9]*' | cut -d' ' -f2 || true)"
+    anchor="$(get_state_anchor "$dir" "$phase")"
 
     case "$status" in
       PASS)
         if [ -n "$effective" ]; then
-          echo "  $phase: STALE (cascade from $effective)"
+          phase_status="STALE"
+          phase_detail="cascade from $effective"
+          if ! $json_mode; then
+            echo "  $phase: STALE (cascade from $effective)"
+          fi
         elif [ -n "$anchor" ]; then
           # Check for staleness
           stale_result="$(check_staleness "$dir" "$phase" "$anchor" 2>/dev/null || true)"
           if [ "$stale_result" = "STALE" ]; then
             [ -z "$effective" ] && effective="$phase"
-            echo "  $phase: STALE (deps changed since anchor $anchor)"
+            phase_status="STALE"
+            phase_detail="deps changed since anchor $anchor"
+            if ! $json_mode; then
+              echo "  $phase: STALE (deps changed since anchor $anchor)"
+            fi
           else
-            echo "  $phase: CLEAN (anchor: $anchor)"
+            phase_status="CLEAN"
+            if ! $json_mode; then
+              echo "  $phase: CLEAN (anchor: $anchor)"
+            fi
           fi
         else
-          echo "  $phase: PASS (no anchor)"
+          phase_status="PASS"
+          phase_detail="no anchor"
+          if ! $json_mode; then
+            echo "  $phase: PASS (no anchor)"
+          fi
         fi
         ;;
       *)
         [ -z "$effective" ] && effective="$phase"
-        detail="$(echo "$result" | tail -n +2 | head -3)"
-        echo "  $phase: $status"
-        if [ -n "$detail" ]; then
-          echo "$detail" | sed 's/^/    /'
+        phase_status="$status"
+        phase_detail="$(echo "$result" | tail -n +2 | head -3)"
+        if ! $json_mode; then
+          echo "  $phase: $status"
+        fi
+        if [ -n "$phase_detail" ] && ! $json_mode; then
+          echo "$phase_detail" | sed 's/^/    /'
         fi
         ;;
     esac
+
+    case "$phase_status" in
+      CLEAN|PASS) errors_json="[]" ;;
+      *)
+        if [ -n "$phase_detail" ]; then
+          errors_json="$(json_array_from_lines "$phase_detail")"
+        else
+          errors_json="[]"
+        fi
+        ;;
+    esac
+
+    anchor_json="$(json_optional_string "$anchor")"
+    item="{\"phase\":$(json_quote "$phase"),\"status\":$(json_quote "$phase_status"),\"anchor\":$anchor_json,\"errors\":$errors_json}"
+    phase_items="$(json_append_item "$phase_items" "$item")"
   done
 
-  if [ -n "$effective" ]; then
-    echo ""
-    echo "Effective phase: $effective"
+  if $json_mode; then
+    if [ -n "$effective" ]; then
+      effective_json="$(json_quote "$effective")"
+      all_clean=false
+    else
+      effective_json="null"
+      all_clean=true
+    fi
+    printf '{"feature":%s,"command":"status","effectivePhase":%s,"allClean":%s,"phases":[%s]}\n' \
+      "$(json_quote "$id")" \
+      "$effective_json" \
+      "$all_clean" \
+      "$phase_items"
   else
-    echo ""
-    echo "All phases CLEAN."
+    if [ -n "$effective" ]; then
+      echo ""
+      echo "Effective phase: $effective"
+    else
+      echo ""
+      echo "All phases CLEAN."
+    fi
   fi
 }
 
 # --- check ---
 cmd_check() {
-  id="$1"
-  [ -z "$id" ] && die "Usage: anvil check <feature-id>"
+  json_mode=false
+  id=""
+  for arg in "$@"; do
+    case "$arg" in
+      --json) json_mode=true ;;
+      *)
+        if [ -z "$id" ]; then
+          id="$arg"
+        else
+          die "Usage: anvil check <feature-id> [--json]"
+        fi
+        ;;
+    esac
+  done
+
+  [ -z "$id" ] && die "Usage: anvil check <feature-id> [--json]"
   dir="$(feature_dir "$id")"
   [ -d "$dir" ] || die "Feature $id not found at $dir"
 
   # Validate all gates in order, cascade failures forward
   cascade_from=""
   all_pass=true
+  effective=""
+  phase_items=""
 
   for phase in $PHASES; do
+    phase_status=""
+    phase_detail=""
+    anchor_for_json=""
+
     gate="$dir/$phase/gate.md"
     if [ ! -f "$gate" ]; then
-      echo "$phase: MISSING (no gate.md)"
+      if ! $json_mode; then
+        echo "$phase: MISSING (no gate.md)"
+      fi
+      phase_status="MISSING"
+      phase_detail="no gate.md"
       [ -z "$cascade_from" ] && cascade_from="$phase"
+      [ -z "$effective" ] && effective="$phase"
       all_pass=false
       update_state "$dir" "$phase" "fail"
-      continue
-    fi
+    else
+      # If upstream failed, cascade
+      if [ -n "$cascade_from" ]; then
+        if ! $json_mode; then
+          echo "$phase: STALE (cascade from $cascade_from)"
+        fi
+        phase_status="STALE"
+        phase_detail="cascade from $cascade_from"
+        [ -z "$effective" ] && effective="$phase"
+        all_pass=false
+        update_state "$dir" "$phase" "stale"
+      else
+        result="$(validate_gate "$dir" "$phase")"
+        status="$(echo "$result" | head -1)"
 
-    # If upstream failed, cascade
-    if [ -n "$cascade_from" ]; then
-      echo "$phase: STALE (cascade from $cascade_from)"
-      all_pass=false
-      update_state "$dir" "$phase" "stale"
-      continue
-    fi
+        if [ "$status" = "PASS" ]; then
+          # Check staleness if anchor exists
+          anchor="$(get_state_anchor "$dir" "$phase")"
+          if [ -n "$anchor" ]; then
+            stale_result="$(check_staleness "$dir" "$phase" "$anchor")"
+            if [ "$stale_result" = "STALE" ]; then
+              if ! $json_mode; then
+                echo "$phase: STALE (deps changed since anchor)"
+              fi
+              phase_status="STALE"
+              phase_detail="deps changed since anchor"
+              cascade_from="$phase"
+              [ -z "$effective" ] && effective="$phase"
+              all_pass=false
+              update_state "$dir" "$phase" "stale"
+            fi
+          fi
 
-    result="$(validate_gate "$dir" "$phase")"
-    status="$(echo "$result" | head -1)"
+          if [ -z "$phase_status" ]; then
+            # Check dirty (uncommitted changes to needs)
+            dirty_result="$(check_dirty "$dir" "$phase")"
+            if [ "$dirty_result" = "DIRTY" ]; then
+              if ! $json_mode; then
+                echo "$phase: DIRTY (uncommitted changes to deps)"
+              fi
+              phase_status="DIRTY"
+              phase_detail="uncommitted changes to deps"
+              cascade_from="$phase"
+              [ -z "$effective" ] && effective="$phase"
+              all_pass=false
+              update_state "$dir" "$phase" "dirty"
+            fi
+          fi
 
-    if [ "$status" = "PASS" ]; then
-      # Check staleness if anchor exists
-      anchor="$(grep "  $phase:" "$dir/state.yaml" | grep -o 'anchor: [a-f0-9]*' | cut -d' ' -f2 || true)"
-      if [ -n "$anchor" ]; then
-        stale_result="$(check_staleness "$dir" "$phase" "$anchor")"
-        if [ "$stale_result" = "STALE" ]; then
-          echo "$phase: STALE (deps changed since anchor)"
+          if [ -z "$phase_status" ]; then
+            if ! $json_mode; then
+              echo "$phase: PASS"
+            fi
+            phase_status="PASS"
+            # Set anchor on pass (only if transitioning to pass)
+            current_anchor="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || true)"
+            update_state "$dir" "$phase" "pass" "$current_anchor"
+            anchor_for_json="$current_anchor"
+          fi
+        else
+          if ! $json_mode; then
+            echo "$phase: $status"
+          fi
+          phase_status="$status"
+          phase_detail="$(echo "$result" | tail -n +2)"
+          if [ -n "$phase_detail" ] && ! $json_mode; then
+            echo "$phase_detail" | sed 's/^/  /'
+          fi
           cascade_from="$phase"
+          [ -z "$effective" ] && effective="$phase"
           all_pass=false
-          update_state "$dir" "$phase" "stale"
-          continue
+          # Determine appropriate state
+          case "$status" in
+            PENDING) update_state "$dir" "$phase" "pending" ;;
+            FAIL)    update_state "$dir" "$phase" "fail" ;;
+            *)       update_state "$dir" "$phase" "in_progress" ;;
+          esac
         fi
       fi
-
-      # Check dirty (uncommitted changes to needs)
-      dirty_result="$(check_dirty "$dir" "$phase")"
-      if [ "$dirty_result" = "DIRTY" ]; then
-        echo "$phase: DIRTY (uncommitted changes to deps)"
-        cascade_from="$phase"
-        all_pass=false
-        update_state "$dir" "$phase" "dirty"
-        continue
-      fi
-
-      echo "$phase: PASS"
-      # Set anchor on pass (only if transitioning to pass)
-      current_anchor="$(git -C "$REPO_ROOT" rev-parse HEAD 2>/dev/null || true)"
-      update_state "$dir" "$phase" "pass" "$current_anchor"
-    else
-      echo "$phase: $status"
-      echo "$result" | tail -n +2 | sed 's/^/  /'
-      cascade_from="$phase"
-      all_pass=false
-      # Determine appropriate state
-      case "$status" in
-        PENDING) update_state "$dir" "$phase" "pending" ;;
-        FAIL)    update_state "$dir" "$phase" "fail" ;;
-        *)       update_state "$dir" "$phase" "in_progress" ;;
-      esac
     fi
+
+    if [ -z "$anchor_for_json" ]; then
+      anchor_for_json="$(get_state_anchor "$dir" "$phase")"
+    fi
+
+    case "$phase_status" in
+      PASS) errors_json="[]" ;;
+      *)
+        if [ -n "$phase_detail" ]; then
+          errors_json="$(json_array_from_lines "$phase_detail")"
+        else
+          errors_json="[]"
+        fi
+        ;;
+    esac
+
+    anchor_json="$(json_optional_string "$anchor_for_json")"
+    item="{\"phase\":$(json_quote "$phase"),\"status\":$(json_quote "$phase_status"),\"anchor\":$anchor_json,\"errors\":$errors_json}"
+    phase_items="$(json_append_item "$phase_items" "$item")"
   done
 
-  if $all_pass; then
+  if $json_mode; then
+    if [ -n "$effective" ]; then
+      effective_json="$(json_quote "$effective")"
+    else
+      effective_json="null"
+    fi
+    printf '{"feature":%s,"command":"check","effectivePhase":%s,"allPass":%s,"phases":[%s]}\n' \
+      "$(json_quote "$id")" \
+      "$effective_json" \
+      "$all_pass" \
+      "$phase_items"
+  elif $all_pass; then
     echo ""
     echo "All gates pass."
   fi
@@ -250,11 +461,23 @@ cmd_advance() {
 
 # --- list ---
 cmd_list() {
+  json_mode=false
+  for arg in "$@"; do
+    case "$arg" in
+      --json) json_mode=true ;;
+      *) die "Usage: anvil list [--json]" ;;
+    esac
+  done
+
   # Handle missing or empty features directory
   if [ ! -d "$FEATURES_DIR" ]; then
+    if $json_mode; then
+      printf '{"command":"list","features":[]}\n'
+    fi
     exit 0
   fi
 
+  feature_items=""
   for dir in "$FEATURES_DIR"/*/; do
     # Guard against empty glob (no matches)
     [ -d "$dir" ] || continue
@@ -304,8 +527,17 @@ cmd_list() {
       effective_status="CLEAN"
     fi
 
-    echo "$id $effective $effective_status"
+    if $json_mode; then
+      item="{\"feature\":$(json_quote "$id"),\"effectivePhase\":$(json_quote "$effective"),\"status\":$(json_quote "$effective_status")}"
+      feature_items="$(json_append_item "$feature_items" "$item")"
+    else
+      echo "$id $effective $effective_status"
+    fi
   done
+
+  if $json_mode; then
+    printf '{"command":"list","features":[%s]}\n' "$feature_items"
+  fi
 }
 
 # --- helpers ---

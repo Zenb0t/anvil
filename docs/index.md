@@ -13,7 +13,10 @@ This repository uses docs as a system of record.
 - `bin/anvil`: zero-dependency POSIX shell CLI.
   - `anvil init <id>` — scaffold a feature
   - `anvil status <id>` — print phase status
+  - `anvil status <id> --json` — machine-readable phase status
   - `anvil check <id>` — validate gates
+  - `anvil check <id> --json` — machine-readable gate validation
+  - `anvil list --json` — machine-readable feature listing
   - `anvil advance <id>` — move to next phase
 
 ## Active Work
