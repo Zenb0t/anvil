@@ -252,7 +252,7 @@ cmd_advance() {
 cmd_list() {
   # Handle missing or empty features directory
   if [ ! -d "$FEATURES_DIR" ]; then
-    exit 0
+    return 0
   fi
 
   for dir in "$FEATURES_DIR"/*/; do
@@ -335,11 +335,17 @@ validate_gate() {
   fi
 
   # 3. Check Rationale is non-empty and contains a reference
-  rationale="$(sed -n '/^Rationale:/,/^[A-Z]/p' "$gate" | grep -v '^Rationale:' | grep -v '^[A-Z]' | tr -d '[:space:]' || true)"
+  # Support both inline (Rationale: text) and next-line (Rationale:\n  text) formats
+  rationale_inline="$(grep '^Rationale:' "$gate" | sed 's/^Rationale: *//' | tr -d '[:space:]' || true)"
+  rationale_block="$(sed -n '/^Rationale:/,/^[A-Z]/p' "$gate" | grep -v '^Rationale:' | grep -v '^[A-Z]' | tr -d '[:space:]' || true)"
+  rationale="${rationale_inline}${rationale_block}"
   if [ -z "$rationale" ]; then
     errors="${errors}Rationale is empty\n"
-  elif ! grep -q 'Rationale:' "$gate" || ! sed -n '/^Rationale:/,/^$/p' "$gate" | grep -qE '`[^`]+`|[a-zA-Z0-9/_.-]+\.[a-zA-Z]'; then
-    errors="${errors}Rationale must reference a file path or backtick-quoted term\n"
+  else
+    rationale_full="$(sed -n '/^Rationale:/,/^[A-Z]/p' "$gate" || true)"
+    if ! echo "$rationale_full" | grep -qE '`[^`]+`|[a-zA-Z0-9/_.-]+\.[a-zA-Z]'; then
+      errors="${errors}Rationale must reference a file path or backtick-quoted term\n"
+    fi
   fi
 
   # 4. Check produces files exist
@@ -456,14 +462,14 @@ cmd_lint() {
     case "$id" in
       *..*)
         echo "ERROR: invalid feature ID (directory traversal rejected)" >&2
-        exit 1
+        return 1
         ;;
     esac
   fi
 
   # Handle missing FEATURES_DIR
   if [ ! -d "$FEATURES_DIR" ]; then
-    exit 0
+    return 0
   fi
 
   # Build list of features to lint
@@ -471,7 +477,7 @@ cmd_lint() {
     fdir="$(feature_dir "$id")"
     if [ ! -d "$fdir" ]; then
       echo "ERROR: Feature $id not found at $fdir" >&2
-      exit 1
+      return 1
     fi
     feature_list="$id"
   else
@@ -667,21 +673,24 @@ cmd_lint() {
   # Actually, we've been printing directly to stdout, so we need a different approach
   # Let's exit based on issue_count
   if [ "$issue_count" -gt 0 ]; then
-    exit 1
+    return 1
   fi
-  exit 0
+  return 0
 }
 
 # --- main ---
-[ $# -lt 1 ] && usage
-cmd="$1"; shift
+# Guard: skip dispatch when sourced (allows tests to call functions directly)
+if [ "${ANVIL_SOURCED:-0}" != "1" ]; then
+  [ $# -lt 1 ] && usage
+  cmd="$1"; shift
 
-case "$cmd" in
-  init)    cmd_init "$@" ;;
-  status)  cmd_status "$@" ;;
-  check)   cmd_check "$@" ;;
-  advance) cmd_advance "$@" ;;
-  list)    cmd_list "$@" ;;
-  lint)    cmd_lint "$@" ;;
-  *)       usage ;;
-esac
+  case "$cmd" in
+    init)    cmd_init "$@" ;;
+    status)  cmd_status "$@" ;;
+    check)   cmd_check "$@" ;;
+    advance) cmd_advance "$@" ;;
+    list)    cmd_list "$@" ;;
+    lint)    cmd_lint "$@" ;;
+    *)       usage ;;
+  esac
+fi
