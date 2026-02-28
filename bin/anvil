@@ -18,6 +18,7 @@ Commands:
   status <id>     Print phase status and blockers
   check <id>      Validate current gate (files, checklist, staleness)
   advance <id>    Move to next phase (runs check first)
+  list            List all features with effective phase and gate status
 
 EOF
   exit 1
@@ -246,6 +247,66 @@ cmd_advance() {
   echo "Advanced $id: $current -> $next"
 }
 
+# --- list ---
+cmd_list() {
+  # Handle missing or empty features directory
+  if [ ! -d "$FEATURES_DIR" ]; then
+    exit 0
+  fi
+
+  for dir in "$FEATURES_DIR"/*/; do
+    # Guard against empty glob (no matches)
+    [ -d "$dir" ] || continue
+
+    id="$(basename "$dir")"
+    state="$dir/state.yaml"
+
+    if [ ! -f "$state" ]; then
+      echo "warning: $id has no state.yaml, skipping" >&2
+      continue
+    fi
+
+    # Find effective phase (lowest non-PASS gate)
+    effective=""
+    effective_status=""
+    for phase in $PHASES; do
+      gate="$dir/$phase/gate.md"
+      if [ ! -f "$gate" ]; then
+        [ -z "$effective" ] && effective="$phase" && effective_status="MISSING"
+        continue
+      fi
+
+      result="$(validate_gate "$dir" "$phase" 2>/dev/null || true)"
+      gstatus="$(echo "$result" | head -1)"
+
+      if [ "$gstatus" != "PASS" ]; then
+        [ -z "$effective" ] && effective="$phase" && effective_status="$gstatus"
+        continue
+      fi
+
+      # Gate passed — check staleness if anchor exists
+      if [ -z "$effective" ]; then
+        anchor="$(grep "  $phase:" "$state" | grep -o 'anchor: [a-f0-9]*' | cut -d' ' -f2 || true)"
+        if [ -n "$anchor" ]; then
+          stale_result="$(check_staleness "$dir" "$phase" "$anchor" 2>/dev/null || true)"
+          if [ "$stale_result" = "STALE" ]; then
+            effective="$phase"
+            effective_status="STALE"
+            continue
+          fi
+        fi
+      fi
+    done
+
+    if [ -z "$effective" ]; then
+      effective="4-ship"
+      effective_status="CLEAN"
+    fi
+
+    echo "$id $effective $effective_status"
+  done
+}
+
 # --- helpers ---
 
 # Validate a single gate file, output status on line 1, details on subsequent lines
@@ -392,5 +453,6 @@ case "$cmd" in
   status)  cmd_status "$@" ;;
   check)   cmd_check "$@" ;;
   advance) cmd_advance "$@" ;;
+  list)    cmd_list "$@" ;;
   *)       usage ;;
 esac
