@@ -1,2 +1,0 @@
-#!/usr/bin/env bun
-require("../process/edsc/scripts/edsc.js");

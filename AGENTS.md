@@ -3,14 +3,13 @@
 Start here, then follow links:
 
 - `docs/index.md`: full doc map.
-- `docs/edsc-gap-analysis.md`: EDSC template gaps addressed and open ambiguities.
-- `process/edsc/README.md`: how to run EDSC.
-- `skills/edsc-bun-orchestrator/SKILL.md`: bun-first agent workflow for EDSC.
-- `process/edsc/references/epistemology.md`: verification framing.
-- `process/edsc/references/example-feature.md`: worked example.
+- `process/anvil/README.md`: how ANVIL works (5 phases, 2 roles, gating).
+- `skills/anvil/SKILL.md`: orchestrator skill for autonomous phase management.
+- `skills/anvil/prompts/`: phase-specific prompts (define, spec, verify, build, ship).
 
 When resuming a feature:
 
-1. Open `work/features/<id>/README.md`.
-2. Open `work/features/<id>/<current-phase>/README.md`.
-3. Check `work/features/<id>/phase.yaml` for mode, blockers, decisions.
+1. Run `anvil check <id>` — always start with a mechanical check.
+2. Open `work/features/<id>/README.md` for context and decisions.
+3. Open `work/features/<id>/state.yaml` for machine-readable state.
+4. Run `anvil status <id>` for current phase and blockers.
