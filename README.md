@@ -9,6 +9,7 @@ Anvil is a simplified agentic SDLC that fuses rigorous phase-gating with practic
 It includes:
 - A zero-dependency POSIX shell CLI for scaffolding, checking, and advancing features.
 - Mechanical gate validation (required files, checklists, git-based staleness detection).
+- Deterministic Claude Code hooks for safety and post-write validation.
 - Feature templates and phase prompts for structured execution.
 - Two roles (Architect + Builder) with transparent diff-based enforcement.
 - Falsification-first verification with executable acceptance tests.
@@ -44,6 +45,8 @@ anvil advance <feature-id>    # Move to next phase (runs check first)
 
 - `process/anvil/` — ANVIL process definition, templates, and README.
 - `skills/anvil/` — Orchestrator skill and phase prompts.
+- `.claude/hooks/` — Deterministic Claude guardrails and async lint hook.
+- `.claude/settings.json` — Hook configuration.
 - `bin/anvil` — CLI entry point (POSIX shell script).
 - `work/features/` — Generated feature workspaces.
 - `docs/` — Documentation index.

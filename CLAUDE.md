@@ -12,4 +12,5 @@ Agent Navigated Verified Implementation Lifecycle.
 - Process definition in `process/anvil/`
 - Feature workspaces in `work/features/`
 - Templates in `process/anvil/templates/feature/`
+- Deterministic Claude hooks configured in `.claude/settings.json`
 - State is derived — never manually edit `state.yaml`
