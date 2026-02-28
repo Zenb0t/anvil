@@ -1,0 +1,8 @@
+feature: F-2026-02-reset
+phase: 4-ship
+gates:
+  0-define: { status: pass, anchor: fda3b5090ae796dec8b2eef6d880f6d4fc108a35 }
+  1-spec: { status: pass, anchor: fda3b5090ae796dec8b2eef6d880f6d4fc108a35 }
+  2-verify: { status: pass, anchor: fda3b5090ae796dec8b2eef6d880f6d4fc108a35 }
+  3-build: { status: pass, anchor: fda3b5090ae796dec8b2eef6d880f6d4fc108a35 }
+  4-ship: { status: pass, anchor: fda3b5090ae796dec8b2eef6d880f6d4fc108a35 }
