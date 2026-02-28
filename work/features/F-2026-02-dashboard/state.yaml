@@ -1,0 +1,8 @@
+feature: F-2026-02-dashboard
+phase: 4-ship
+gates:
+  0-define: { status: pass, anchor: 8253a92dcd0066c64705ed48e01452540f405e60 }
+  1-spec: { status: pass, anchor: 8253a92dcd0066c64705ed48e01452540f405e60 }
+  2-verify: { status: pass, anchor: 8253a92dcd0066c64705ed48e01452540f405e60 }
+  3-build: { status: pass, anchor: 8253a92dcd0066c64705ed48e01452540f405e60 }
+  4-ship: { status: in_progress }
