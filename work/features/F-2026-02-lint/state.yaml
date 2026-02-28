@@ -1,0 +1,8 @@
+feature: F-2026-02-lint
+phase: 4-ship
+gates:
+  0-define: { status: pass, anchor: c8617a6f1123080cd0c83dd51216f1965dbdcc45 }
+  1-spec: { status: pass, anchor: c8617a6f1123080cd0c83dd51216f1965dbdcc45 }
+  2-verify: { status: pass, anchor: c8617a6f1123080cd0c83dd51216f1965dbdcc45 }
+  3-build: { status: pass, anchor: c8617a6f1123080cd0c83dd51216f1965dbdcc45 }
+  4-ship: { status: in_progress }
