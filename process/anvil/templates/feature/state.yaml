@@ -1,0 +1,8 @@
+feature: {{FEATURE_ID}}
+phase: 0-define
+gates:
+  0-define: { status: pending }
+  1-spec: { status: pending }
+  2-verify: { status: pending }
+  3-build: { status: pending }
+  4-ship: { status: pending }
