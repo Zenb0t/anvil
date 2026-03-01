@@ -14,8 +14,8 @@ produces: [evidence/]
 
 Status: PASS
 Rationale:
-`evidence/run-tests.sh` defines executable acceptance checks for Makefile install/uninstall behavior and safety invariants. Before implementation, it fails RED because install/uninstall targets do not exist yet.
+`evidence/run-tests.sh` defines executable acceptance checks for BR-1..BR-7, IT-1..IT-3, INV-1..INV-3, and ERR-1..ERR-4 across install, uninstall, idempotency, and managed-target safety behavior. Before implementation, it failed RED because install/uninstall targets did not exist yet.
 
 Falsification:
 - Tried: ran `bash work/features/F-2026-02-install/2-verify/evidence/run-tests.sh` before adding `Makefile` -> Observed: non-zero exit with failing install assertions (RED as expected).
-- Tried: included missing target/dir uninstall checks in acceptance evidence -> Observed: ERR-2/ERR-3 have explicit assertions.
+- Tried: added non-managed uninstall and directory-preservation checks to the evidence matrix -> Observed: explicit assertions now cover ERR-4 and IT-2.

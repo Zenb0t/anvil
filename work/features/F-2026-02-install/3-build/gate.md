@@ -14,4 +14,4 @@ produces: [slices.md]
 
 Status: PASS
 Rationale:
-`Makefile` and `README.md` now implement/document install/uninstall behavior; acceptance evidence in `2-verify/evidence/run-tests.sh` is GREEN (`14 passed, 0 failed`) and no verify assertions were changed during build.
+`Makefile` and `README.md` implement/document managed install/uninstall behavior, and `2-verify/evidence/run-tests.sh` is GREEN with coverage for ERR-1 replacement, IT-2 directory preservation, BR-7 docs checks, and ERR-4 non-managed target refusal.

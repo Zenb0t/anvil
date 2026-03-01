@@ -14,7 +14,7 @@ produces: [review-bundle.md]
 
 Status: PASS
 Rationale:
-`4-ship/review-bundle.md` captures implementation diff, compliance mapping, acceptance evidence (`14 passed`), hardening audit outcomes, and independent verification steps.
+`4-ship/review-bundle.md` captures implementation diff, updated compliance mapping (including ERR-4), full acceptance evidence, hardening audit outcomes, and independent verification steps.
 
 Falsification:
 - Tried: checked install/uninstall path scope in `Makefile` -> Observed: operations are restricted to `~/.local/bin/anvil`.

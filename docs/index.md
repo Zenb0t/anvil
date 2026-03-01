@@ -26,3 +26,7 @@ This repository uses docs as a system of record.
 ## Templates
 
 - `process/anvil/templates/feature/`: canonical templates for all 5 phases.
+
+## Reflections
+
+- `docs/reflections/`: session retrospectives and persistent agent learnings.

@@ -1,8 +1,8 @@
 feature: F-2026-02-install
 phase: 4-ship
 gates:
-  0-define: { status: pass, anchor: 6d5ee407c56a64c579dedf86f5175153778888bc }
-  1-spec: { status: pass, anchor: 6d5ee407c56a64c579dedf86f5175153778888bc }
-  2-verify: { status: pass, anchor: 6d5ee407c56a64c579dedf86f5175153778888bc }
-  3-build: { status: pass, anchor: 6d5ee407c56a64c579dedf86f5175153778888bc }
-  4-ship: { status: pass, anchor: 6d5ee407c56a64c579dedf86f5175153778888bc }
+  0-define: { status: pass, anchor: 64860d5cae62844f93d08d3eb783bc910ec7e924 }
+  1-spec: { status: pass, anchor: 64860d5cae62844f93d08d3eb783bc910ec7e924 }
+  2-verify: { status: dirty }
+  3-build: { status: stale }
+  4-ship: { status: stale }

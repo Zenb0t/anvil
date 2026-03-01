@@ -21,6 +21,7 @@ This repository is licensed under the MIT License. See [LICENSE](LICENSE).
 
 - Git
 - POSIX shell (sh/bash/zsh)
+- make
 
 ## Quick Start
 
@@ -44,7 +45,7 @@ anvil advance <feature-id>    # Move to next phase (runs check first)
 
 ```bash
 make install    # Symlink bin/anvil to ~/.local/bin/anvil
-make uninstall  # Remove ~/.local/bin/anvil if present
+make uninstall  # Remove managed ~/.local/bin/anvil symlink
 ```
 
 If `~/.local/bin` is not on your PATH, add it in your shell profile.

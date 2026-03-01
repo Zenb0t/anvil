@@ -11,7 +11,7 @@ If `~/.local/bin` does not exist, `make install` creates it.
 Repeated `make install` invocations exit 0 and keep a valid symlink target.
 
 ### BR-4: `make uninstall` removes installed entry
-`make uninstall` removes `~/.local/bin/anvil` when present.
+`make uninstall` removes `~/.local/bin/anvil` only when it is the managed symlink pointing to this repository's `bin/anvil`.
 
 ### BR-5: `make uninstall` is idempotent
 Repeated `make uninstall` invocations exit 0 without error.
@@ -43,6 +43,7 @@ Repository docs include concise instructions for `make install` and `make uninst
 - ERR-1: Existing regular file at `~/.local/bin/anvil` is replaced predictably by symlink install.
 - ERR-2: Missing target on uninstall is treated as no-op success.
 - ERR-3: Missing `~/.local/bin` directory on uninstall is treated as no-op success.
+- ERR-4: Existing non-managed target at `~/.local/bin/anvil` during uninstall is preserved and uninstall exits non-zero.
 
 ## Hardening Seeds
 ### Security

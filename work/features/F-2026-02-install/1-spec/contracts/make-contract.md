@@ -18,12 +18,14 @@ make uninstall
   - Ensures `$(HOME)/.local/bin` exists.
   - Creates/updates symlink `$(HOME)/.local/bin/anvil -> <repo>/bin/anvil`.
 - `uninstall`:
-  - Removes `$(HOME)/.local/bin/anvil` if present.
+  - Removes `$(HOME)/.local/bin/anvil` only if it is a managed symlink to `<repo>/bin/anvil`.
+  - Refuses removal for non-managed targets.
 
 ## Exit Codes
 
 - `0`: success (including idempotent no-op cases).
-- Non-zero: unexpected filesystem/system failure.
+- `1`: uninstall refused because target is non-managed.
+- Non-zero (>1): unexpected filesystem/system failure.
 
 ## Safety Constraints
 
