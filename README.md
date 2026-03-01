@@ -22,7 +22,6 @@ This repository is licensed under the MIT License. See [LICENSE](LICENSE).
 
 - Git
 - Bun (`1.3.9+`)
-- make
 
 ## Quick Start
 
@@ -61,11 +60,16 @@ anvil lint <feature-id> -q     # Preferred for token-conscious runs
 
 `-q` is supported by `status`, `check`, and `lint`, and is mutually exclusive with `--output` / `--json`.
 
-## Install CLI Symlink
+## Install CLI
 
 ```bash
-make install    # Symlink bin/anvil to ~/.local/bin/anvil
-make uninstall  # Remove managed ~/.local/bin/anvil symlink
+sh scripts/install.sh install    # Install to ~/.local/bin/anvil
+sh scripts/install.sh uninstall  # Remove managed install
+```
+
+```powershell
+.\scripts\install.ps1 install    # Install to $HOME\.local\bin\anvil.cmd
+.\scripts\install.ps1 uninstall  # Remove managed install
 ```
 
 If `~/.local/bin` is not on your PATH, add it in your shell profile.
@@ -79,7 +83,7 @@ If `~/.local/bin` is not on your PATH, add it in your shell profile.
 - `.claude/settings.json` - Hook configuration.
 - `bin/anvil` - CLI entry point (Bun runtime).
 - `bin/sync-anvil-skill` - Sync/check helper for skill mirror consistency.
-- `Makefile` - install/uninstall helper targets for `~/.local/bin/anvil`.
+- `scripts/install.sh` / `scripts/install.ps1` - installer entry points.
 - `work/features/` - Generated feature workspaces.
 - `docs/` - Documentation index.
 

@@ -26,6 +26,11 @@ This repository uses docs as a system of record.
   - `anvil lint [<id>]` - validate process artifacts, frontmatter, and schema structure
   - `anvil lint [<id>] -q` - token-conscious lint run (preferred for CI/agent loops)
 
+## Installers
+
+- `scripts/install.sh [install|uninstall]`: install/remove a managed wrapper at `~/.local/bin/anvil` (POSIX shells).
+- `scripts/install.ps1 [install|uninstall]`: install/remove a managed wrapper at `$HOME\.local\bin\anvil.cmd` (PowerShell).
+
 ## Active Work
 
 - `work/features/<feature-id>/README.md`: single pane of glass for each feature.
