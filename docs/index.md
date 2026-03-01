@@ -5,8 +5,9 @@ This repository uses docs as a system of record.
 ## Process
 
 - `process/anvil/README.md`: ANVIL overview — 5 phases, 2 roles, gating mechanics.
-- `skills/anvil/SKILL.md`: orchestrator skill for autonomous phase management.
-- `skills/anvil/prompts/`: phase-specific prompts (define, spec, verify, build, ship).
+- `.claude/skills/anvil/SKILL.md`: canonical orchestrator skill for autonomous phase management.
+- `.claude/skills/anvil/prompts/`: canonical phase-specific prompts (define, spec, verify, build, ship).
+- `skills/anvil/`: generated mirror for non-Claude tooling (`bin/sync-anvil-skill sync`).
 
 ## CLI
 

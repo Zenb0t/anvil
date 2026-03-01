@@ -1,0 +1,52 @@
+#!/bin/sh
+# Sync the ANVIL skill mirror from the canonical Claude Code source.
+set -eu
+
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SRC_DIR="$REPO_ROOT/.claude/skills/anvil"
+DST_DIR="$REPO_ROOT/skills/anvil"
+
+usage() {
+  cat <<'EOF'
+Usage: bin/sync-anvil-skill [sync|check]
+
+Commands:
+  sync   Copy .claude/skills/anvil -> skills/anvil
+  check  Exit non-zero if skills/anvil has drift from .claude/skills/anvil
+EOF
+  exit 1
+}
+
+mode="${1:-sync}"
+
+[ -d "$SRC_DIR" ] || {
+  echo "ERROR: canonical skill directory not found: $SRC_DIR" >&2
+  exit 1
+}
+
+case "$mode" in
+  sync)
+    mkdir -p "$REPO_ROOT/skills"
+    rm -rf "$DST_DIR"
+    cp -R "$SRC_DIR" "$DST_DIR"
+    echo "Synced skills/anvil from .claude/skills/anvil"
+    ;;
+  check)
+    if [ ! -d "$DST_DIR" ]; then
+      echo "ERROR: mirror directory missing: $DST_DIR" >&2
+      echo "Run: bin/sync-anvil-skill sync" >&2
+      exit 1
+    fi
+
+    if diff -ru "$SRC_DIR" "$DST_DIR" >/dev/null; then
+      echo "OK: skills/anvil is in sync with .claude/skills/anvil"
+    else
+      echo "ERROR: skills/anvil drifted from .claude/skills/anvil" >&2
+      echo "Run: bin/sync-anvil-skill sync" >&2
+      exit 1
+    fi
+    ;;
+  *)
+    usage
+    ;;
+esac

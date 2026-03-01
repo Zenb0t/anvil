@@ -38,13 +38,16 @@ anvil init <feature-id>       # Scaffold a new feature from templates
 anvil status <feature-id>     # Print phase status and blockers
 anvil check <feature-id>      # Validate current gate (files, checklist, staleness)
 anvil advance <feature-id>    # Move to next phase (runs check first)
+bin/sync-anvil-skill check    # Verify skills/anvil mirror is in sync
 ```
 
 ## Repository Layout
 
 - `process/anvil/` — ANVIL process definition, templates, and README.
-- `skills/anvil/` — Orchestrator skill and phase prompts.
+- `.claude/skills/anvil/` — Canonical ANVIL skill source for Claude Code.
+- `skills/anvil/` — Generated mirror for non-Claude tooling.
 - `bin/anvil` — CLI entry point (POSIX shell script).
+- `bin/sync-anvil-skill` — Sync/check helper for skill mirror consistency.
 - `work/features/` — Generated feature workspaces.
 - `docs/` — Documentation index.
 
