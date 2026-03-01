@@ -15,13 +15,16 @@ This repository uses docs as a system of record.
 - `bin/anvil`: Bun-native CLI.
   - `anvil init <id>` - scaffold a feature
   - `anvil status <id>` - print phase status
+  - `anvil status <id> -q` - token-conscious status check (preferred when output is not needed)
   - `anvil status <id> --json` - machine-readable phase status
   - `anvil check <id>` - validate gates
+  - `anvil check <id> -q` - token-conscious gate check (preferred when output is not needed)
   - `anvil check <id> --json` - machine-readable gate validation
   - `anvil list` - list all features with effective phase and status
   - `anvil list --json` - machine-readable feature listing
   - `anvil advance <id>` - move to next phase
   - `anvil lint [<id>]` - validate process artifacts, frontmatter, and schema structure
+  - `anvil lint [<id>] -q` - token-conscious lint run (preferred for CI/agent loops)
 
 ## Active Work
 

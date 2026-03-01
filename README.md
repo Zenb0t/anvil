@@ -49,6 +49,18 @@ anvil list --json                 # Machine-readable feature summary
 anvil lint --output json          # Machine-readable frontmatter/schema diagnostics
 ```
 
+## Token-Conscious Usage
+
+Prefer `-q` (or `--quiet`) when you only need the command outcome and exit code:
+
+```bash
+anvil status <feature-id> -q   # Preferred for token-conscious runs
+anvil check <feature-id> -q    # Preferred for token-conscious runs
+anvil lint <feature-id> -q     # Preferred for token-conscious runs
+```
+
+`-q` is supported by `status`, `check`, and `lint`, and is mutually exclusive with `--output` / `--json`.
+
 ## Install CLI Symlink
 
 ```bash
