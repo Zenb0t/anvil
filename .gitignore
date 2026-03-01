@@ -11,3 +11,11 @@ dist/
 # Bun / Node caches
 node_modules/
 .bun/
+
+# Local agent/runtime artifacts
+.claude/settings.local.json
+.claude/monitor/
+.claude/worktrees/
+HANDOFF.md
+bash.exe.stackdump
+work/features/_tr*/

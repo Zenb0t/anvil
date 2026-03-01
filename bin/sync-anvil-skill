@@ -1,0 +1,76 @@
+#!/usr/bin/env bun
+import { cpSync, existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const binDir = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(binDir, "..");
+const srcDir = path.join(repoRoot, ".claude", "skills", "anvil");
+const dstDir = path.join(repoRoot, "skills", "anvil");
+
+function usage(): never {
+  console.error("Usage: bin/sync-anvil-skill [sync|check]");
+  process.exit(1);
+}
+
+function listFiles(rootDir: string, relativeDir = ""): string[] {
+  const current = path.join(rootDir, relativeDir);
+  const files: string[] = [];
+  for (const entry of readdirSync(current, { withFileTypes: true })) {
+    const rel = path.join(relativeDir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listFiles(rootDir, rel));
+    } else if (entry.isFile()) {
+      files.push(rel.replace(/\\/g, "/"));
+    }
+  }
+  return files.sort();
+}
+
+function checkInSync(): boolean {
+  if (!existsSync(dstDir) || !statSync(dstDir).isDirectory()) {
+    return false;
+  }
+  const srcFiles = listFiles(srcDir);
+  const dstFiles = listFiles(dstDir);
+  if (srcFiles.length !== dstFiles.length) {
+    return false;
+  }
+
+  for (let i = 0; i < srcFiles.length; i += 1) {
+    if (srcFiles[i] !== dstFiles[i]) return false;
+    const srcPath = path.join(srcDir, srcFiles[i]);
+    const dstPath = path.join(dstDir, dstFiles[i]);
+    if (readFileSync(srcPath, "utf8") !== readFileSync(dstPath, "utf8")) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+const mode = process.argv[2] ?? "sync";
+
+if (!existsSync(srcDir) || !statSync(srcDir).isDirectory()) {
+  console.error(`ERROR: canonical skill directory not found: ${srcDir}`);
+  process.exit(1);
+}
+
+if (mode === "sync") {
+  rmSync(dstDir, { recursive: true, force: true });
+  cpSync(srcDir, dstDir, { recursive: true });
+  console.log("Synced skills/anvil from .claude/skills/anvil");
+  process.exit(0);
+}
+
+if (mode === "check") {
+  if (checkInSync()) {
+    console.log("OK: skills/anvil is in sync with .claude/skills/anvil");
+    process.exit(0);
+  }
+  console.error("ERROR: skills/anvil drifted from .claude/skills/anvil");
+  console.error("Run: bin/sync-anvil-skill sync");
+  process.exit(1);
+}
+
+usage();

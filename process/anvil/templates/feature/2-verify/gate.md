@@ -5,7 +5,7 @@ produces: [evidence/]
 ---
 # Gate: Verify
 
-- [ ] ETR matrix complete — every claim has evidence criteria
+- [ ] ETR matrix complete - every claim has evidence criteria
 - [ ] Acceptance tests are executable
 - [ ] Acceptance tests are RED (nothing implemented yet)
 - [ ] Each functional claim maps to a specific slice
@@ -16,4 +16,4 @@ Status: PENDING
 Rationale:
 
 Falsification:
-- Tried: → Observed:
+- Tried: -> Observed:
