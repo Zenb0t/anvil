@@ -22,6 +22,7 @@ This repository is licensed under the MIT License. See [LICENSE](LICENSE).
 
 - Git
 - POSIX shell (sh/bash/zsh)
+- make
 
 ## Quick Start
 
@@ -45,6 +46,15 @@ anvil check <feature-id> --json   # Machine-readable gate validation payload
 anvil list --json                 # Machine-readable feature summary
 ```
 
+## Install CLI Symlink
+
+```bash
+make install    # Symlink bin/anvil to ~/.local/bin/anvil
+make uninstall  # Remove managed ~/.local/bin/anvil symlink
+```
+
+If `~/.local/bin` is not on your PATH, add it in your shell profile.
+
 ## Repository Layout
 
 - `process/anvil/` - ANVIL process definition, templates, and README.
@@ -54,6 +64,7 @@ anvil list --json                 # Machine-readable feature summary
 - `.claude/settings.json` - Hook configuration.
 - `bin/anvil` - CLI entry point (POSIX shell script).
 - `bin/sync-anvil-skill` - Sync/check helper for skill mirror consistency.
+- `Makefile` - install/uninstall helper targets for `~/.local/bin/anvil`.
 - `work/features/` - Generated feature workspaces.
 - `docs/` - Documentation index.
 
