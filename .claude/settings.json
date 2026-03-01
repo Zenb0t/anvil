@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_destructive_bash.py\""
+            "command": "bun \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_destructive_bash.ts\""
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_illegal_path_edits.py\""
+            "command": "bun \"$CLAUDE_PROJECT_DIR/.claude/hooks/block_illegal_path_edits.ts\""
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/run_anvil_lint_async.py\"",
+            "command": "bun \"$CLAUDE_PROJECT_DIR/.claude/hooks/run_anvil_lint_async.ts\"",
             "async": true,
             "timeout": 180
           }

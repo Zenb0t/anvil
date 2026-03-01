@@ -25,11 +25,11 @@ ANVIL is a simplified agentic SDLC that fuses rigorous gating with practical sim
 
 ```sh
 anvil init <id>       # Scaffold feature from templates
-anvil status <id>     # Print phase + blockers
+anvil status <id>     # Print phase + blockers (TTY text, piped JSON)
 anvil check <id>      # Validate gate: files exist, checklist complete, deps not stale
 anvil advance <id>    # Move to next phase (only if check passes)
 anvil list            # List all features with effective phase and gate status
-anvil lint [<id>]     # Validate process artifact format and structure
+anvil lint [<id>]     # Validate process artifact format, frontmatter, and schema structure
 ```
 
 ## Key Concepts

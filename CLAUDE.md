@@ -9,14 +9,13 @@ Agent Navigated Verified Implementation Lifecycle.
 ## Project Conventions
 
 - Anvil is consumed by LLM agents, not humans. Optimize output for context density and token efficiency.
-- CLI lives at `bin/anvil` (POSIX shell).
+- CLI lives at `bin/anvil` (Bun runtime).
 - Process definition lives in `process/anvil/`.
 - Feature workspaces live in `work/features/`.
 - Templates live in `process/anvil/templates/feature/`.
 - Canonical ANVIL skill files live in `.claude/skills/anvil/`.
 - Deterministic Claude hooks are configured in `.claude/settings.json`.
 - State is derived. Never manually edit `state.yaml`.
-- `cmd_*` functions use `return` (not `exit`) so tests can source `bin/anvil` via `ANVIL_SOURCED=1`.
 
 ## Bug Fix Workflow
 
@@ -29,4 +28,4 @@ Bug fixes do not go through the full anvil process:
 ## Testing Conventions
 
 - Batch test fixtures at top and cleanup at bottom (Windows Git Bash forks are slow).
-- Source `bin/anvil` in test runners to avoid per-test fork overhead.
+- Prefer invoking `anvil ... --output json` for orchestrators and hooks.

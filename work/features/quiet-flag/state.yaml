@@ -1,0 +1,8 @@
+feature: quiet-flag
+phase: 4-ship
+gates:
+  0-define: { status: pass, anchor: 9c8fd0ac6098defb8ad94b35be0087b47369b893 }
+  1-spec: { status: pass, anchor: 9c8fd0ac6098defb8ad94b35be0087b47369b893 }
+  2-verify: { status: pass, anchor: 9c8fd0ac6098defb8ad94b35be0087b47369b893 }
+  3-build: { status: pass, anchor: 9c8fd0ac6098defb8ad94b35be0087b47369b893 }
+  4-ship: { status: pass, anchor: 9c8fd0ac6098defb8ad94b35be0087b47369b893 }

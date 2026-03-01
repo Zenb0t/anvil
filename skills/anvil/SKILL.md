@@ -9,15 +9,15 @@ You manage feature lifecycles through five phases: Define, Spec, Verify, Build, 
 
 ## Startup Protocol (non-negotiable)
 
-1. Run `bash bin/anvil list` to see all features.
-2. Run `bash bin/anvil check <id>` for the active feature.
+1. Run `anvil list --output json` to see all features.
+2. Run `anvil check <id> --output json` for the active feature.
 3. If not CLEAN: fix before proceeding (STALE → re-verify, DIRTY → commit, FAIL → fix).
 4. Ask the user: *"Has anything changed outside this repo since the last session?"*
 5. If CLEAN + no changes: proceed from effective phase.
 
 ## Phase Detection
 
-Effective phase = lowest phase that is not CLEAN. Run `bash bin/anvil status <id>`.
+Effective phase = lowest phase that is not CLEAN. Run `anvil status <id> --output json`.
 
 ## Phase Execution
 
@@ -57,7 +57,7 @@ Use the Agent tool with:
     - work/features/<ID>/2-verify/gate.md
 
     Run the tests to confirm they are RED (nothing implemented yet).
-    Run `bash bin/anvil check <ID>` at the end.
+    Run `anvil check <ID> --output json` at the end.
 ```
 
 After the subagent completes, verify: tests exist, tests are RED, gate is filled.
@@ -97,7 +97,7 @@ After the Builder subagent completes:
 1. Review `git diff --stat` from the worktree
 2. Check no spec/verify/gate files were modified
 3. Run acceptance tests to confirm GREEN
-4. If all slices done: complete `3-build/gate.md` and run `bash bin/anvil advance <ID>`
+4. If all slices done: complete `3-build/gate.md` and run `anvil advance <ID>`
 
 ## Role Enforcement
 
@@ -110,7 +110,14 @@ After the Builder subagent completes:
 
 ## Gate Format
 
-Rationale content must be on the line AFTER `Rationale:` (not on the same line) and must reference a file path or backtick-quoted term.
+Rationale supports both inline and next-line formats. Must reference a file path or backtick-quoted term.
+
+```
+Status: PASS
+Rationale: `spec.md` covers all behavioral requirements...
+```
+
+or:
 
 ```
 Status: PASS
@@ -121,11 +128,11 @@ Rationale:
 ## CLI
 
 ```sh
-bash bin/anvil init <id>       # Scaffold feature
-bash bin/anvil list             # List all features
-bash bin/anvil status <id>     # Phase status + blockers
-bash bin/anvil check <id>      # Validate gate
-bash bin/anvil advance <id>    # Move to next phase
+anvil init <id>                # Scaffold feature
+anvil list --output json       # Machine-readable feature summary
+anvil status <id> --output json # Machine-readable phase status
+anvil check <id> --output json  # Machine-readable gate validation
+anvil advance <id>             # Move to next phase
 ```
 
 ## State Management
