@@ -16,4 +16,4 @@ Status: PENDING
 Rationale:
 
 Falsification:
-- Tried: → Observed:
+- Tried: -> Observed:
