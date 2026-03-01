@@ -4,11 +4,12 @@
 
 Anvil is a simplified agentic SDLC that fuses rigorous phase-gating with practical simplicity. It drives features through five phases:
 
-`Define → Spec → Verify → Build → Ship`
+`Define -> Spec -> Verify -> Build -> Ship`
 
 It includes:
 - A zero-dependency POSIX shell CLI for scaffolding, checking, and advancing features.
 - Mechanical gate validation (required files, checklists, git-based staleness detection).
+- Deterministic Claude Code hooks for safety and post-write validation.
 - Feature templates and phase prompts for structured execution.
 - Two roles (Architect + Builder) with transparent diff-based enforcement.
 - Falsification-first verification with executable acceptance tests.
@@ -43,13 +44,15 @@ bin/sync-anvil-skill check    # Verify skills/anvil mirror is in sync
 
 ## Repository Layout
 
-- `process/anvil/` — ANVIL process definition, templates, and README.
-- `.claude/skills/anvil/` — Canonical ANVIL skill source for Claude Code.
-- `skills/anvil/` — Generated mirror for non-Claude tooling.
-- `bin/anvil` — CLI entry point (POSIX shell script).
-- `bin/sync-anvil-skill` — Sync/check helper for skill mirror consistency.
-- `work/features/` — Generated feature workspaces.
-- `docs/` — Documentation index.
+- `process/anvil/` - ANVIL process definition, templates, and README.
+- `.claude/skills/anvil/` - Canonical ANVIL skill source for Claude Code.
+- `skills/anvil/` - Generated mirror for non-Claude tooling.
+- `.claude/hooks/` - Deterministic Claude guardrails and async lint hook.
+- `.claude/settings.json` - Hook configuration.
+- `bin/anvil` - CLI entry point (POSIX shell script).
+- `bin/sync-anvil-skill` - Sync/check helper for skill mirror consistency.
+- `work/features/` - Generated feature workspaces.
+- `docs/` - Documentation index.
 
 ## Contributing
 
