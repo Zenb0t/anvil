@@ -40,6 +40,9 @@ anvil status <feature-id>     # Print phase status and blockers
 anvil check <feature-id>      # Validate current gate (files, checklist, staleness)
 anvil advance <feature-id>    # Move to next phase (runs check first)
 bin/sync-anvil-skill check    # Verify skills/anvil mirror is in sync
+anvil status <feature-id> --json  # Machine-readable phase/status payload
+anvil check <feature-id> --json   # Machine-readable gate validation payload
+anvil list --json                 # Machine-readable feature summary
 ```
 
 ## Repository Layout
