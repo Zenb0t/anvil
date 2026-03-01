@@ -77,8 +77,10 @@ function Test-ManagedWrapper {
 }
 
 function Uninstall-Anvil {
-  if (Test-ManagedWrapper -Path $anvilDest -Marker $managedMarker -or
-      Test-ManagedSymlink -Path $anvilDest -ExpectedTarget $anvilSrc) {
+  if (
+    (Test-ManagedWrapper -Path $anvilDest -Marker $managedMarker) -or
+    (Test-ManagedSymlink -Path $anvilDest -ExpectedTarget $anvilSrc)
+  ) {
     Remove-Item -LiteralPath $anvilDest -Force
     Write-Output "Removed $anvilDest"
     return
