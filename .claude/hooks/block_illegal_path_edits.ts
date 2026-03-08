@@ -2,8 +2,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 
-const DERIVED_STATE_RE = /^work\/features\/[^/]+\/state\.yaml$/;
-
 function emitDeny(reason: string): void {
   console.log(
     JSON.stringify({
@@ -56,8 +54,8 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (DERIVED_STATE_RE.test(relPosix)) {
-    emitDeny("Blocked manual edits to derived state cache: work/features/<id>/state.yaml");
+  if (relPosix.startsWith("openspec/schemas/")) {
+    emitDeny("Blocked edits to openspec/schemas/ (use openspec schema commands instead)");
   }
 }
 

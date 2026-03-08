@@ -4,41 +4,26 @@ This repository uses docs as a system of record.
 
 ## Process
 
-- `process/anvil/README.md`: ANVIL overview - 5 phases, 2 roles, gating mechanics.
-- `.claude/skills/anvil/SKILL.md`: canonical orchestrator skill for autonomous phase management.
-- `.claude/skills/anvil/prompts/`: canonical phase-specific prompts (define, spec, verify, build, ship).
-- `skills/anvil/`: generated mirror for non-Claude tooling (`bin/sync-anvil-skill sync`).
+- `openspec/config.yaml`: project configuration with epistemic rules.
+- `.claude/skills/proof-agent/SKILL.md`: proof-oriented orchestrator skill.
+- `.claude/skills/proof-agent/prompts/`: phase-specific prompts (interview, pre-verify, build, review).
+- `.claude/skills/openspec-*/SKILL.md`: generated OpenSpec skills (propose, apply, archive, explore).
 - `.claude/hooks/README.md`: deterministic Claude hook guardrails and async validation.
 
-## CLI
+## OpenSpec CLI
 
-- `bin/anvil`: Bun-native CLI.
-  - `anvil init <id>` - scaffold a feature
-  - `anvil status <id>` - print phase status
-  - `anvil status <id> -q` - token-conscious status check (preferred when output is not needed)
-  - `anvil status <id> --json` - machine-readable phase status
-  - `anvil check <id>` - validate gates
-  - `anvil check <id> -q` - token-conscious gate check (preferred when output is not needed)
-  - `anvil check <id> --json` - machine-readable gate validation
-  - `anvil list` - list all features with effective phase and status
-  - `anvil list --json` - machine-readable feature listing
-  - `anvil advance <id>` - move to next phase
-  - `anvil lint [<id>]` - validate process artifacts, frontmatter, and schema structure
-  - `anvil lint [<id>] -q` - token-conscious lint run (preferred for CI/agent loops)
-
-## Installers
-
-- `scripts/install.sh [install|uninstall]`: install/remove a managed wrapper at `~/.local/bin/anvil` (POSIX shells).
-- `scripts/install.ps1 [install|uninstall]`: install/remove a managed wrapper at `$HOME\.local\bin\anvil.cmd` (PowerShell).
+- `openspec list --json` — list all active changes
+- `openspec status --change <name> --json` — artifact completion status
+- `openspec validate --all --json` — structural validation
+- `openspec show <name> --json` — change details
+- `openspec instructions <artifact> --change <name> --json` — artifact guidance
+- `openspec archive <name> --yes` — archive completed change
 
 ## Active Work
 
-- `work/features/<feature-id>/README.md`: single pane of glass for each feature.
-- `work/features/<feature-id>/state.yaml`: machine-readable state (derived cache).
-
-## Templates
-
-- `process/anvil/templates/feature/`: canonical templates for all 5 phases.
+- `openspec/changes/<change-name>/`: active change artifacts (proposal, design, specs, tasks).
+- `openspec/changes/archive/`: archived completed changes.
+- `openspec/specs/`: source-of-truth specifications.
 
 ## Reflections
 

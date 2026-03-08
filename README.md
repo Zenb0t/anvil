@@ -2,17 +2,15 @@
 
 **Agent Navigated Verified Implementation Lifecycle**
 
-Anvil is a simplified agentic SDLC that fuses rigorous phase-gating with practical simplicity. It drives features through five phases:
-
-`Define -> Spec -> Verify -> Build -> Ship`
+Anvil is a proof-oriented agentic SDLC powered by [OpenSpec](https://github.com/Fission-AI/OpenSpec). It validates output code against specs using falsification-first verification.
 
 It includes:
-- A Bun-native CLI for scaffolding, checking, and advancing features.
-- Mechanical gate validation (required files, checklists, git-based staleness detection).
+- OpenSpec-driven artifact flow (proposal → specs → design → tasks → implement → verify → archive).
+- Falsification-first acceptance tests written BEFORE implementation.
+- ETR (Expected Test Results) matrices mapping spec requirements to test evidence.
+- Builder subagent delegation with TDD in isolated worktrees.
 - Deterministic Claude Code hooks for safety and post-write validation.
-- Feature templates and phase prompts for structured execution.
-- Two roles (Architect + Builder) with transparent diff-based enforcement.
-- Falsification-first verification with executable acceptance tests.
+- Hardening seeds (security, performance, observability) planted in specs and audited at review.
 
 ## License
 
@@ -21,70 +19,37 @@ This repository is licensed under the MIT License. See [LICENSE](LICENSE).
 ## Prerequisites
 
 - Git
-- Bun (`1.3.9+`)
+- Node.js (for OpenSpec CLI)
+- Bun (`1.3.9+`) (for hooks and tests)
 
 ## Quick Start
 
 ```bash
-bun bin/anvil init F-2026-03-my-feature
-bun bin/anvil status F-2026-03-my-feature
-bun bin/anvil check F-2026-03-my-feature
-bun bin/anvil advance F-2026-03-my-feature
+npm install
+openspec list --json
+openspec status --json
 ```
-
-On Windows, you can also run `bin\\anvil.cmd ...` directly from PowerShell or cmd.
 
 ## Common Commands
 
 ```bash
-anvil init <feature-id>       # Scaffold a new feature from templates
-anvil status <feature-id>     # Print phase status and blockers
-anvil check <feature-id>      # Validate current gate (files, checklist, staleness)
-anvil advance <feature-id>    # Move to next phase (runs check first)
-bin/sync-anvil-skill check    # Verify skills/anvil mirror is in sync
-anvil status <feature-id> --json  # Machine-readable phase/status payload
-anvil check <feature-id> --json   # Machine-readable gate validation payload
-anvil list --json                 # Machine-readable feature summary
-anvil lint --output json          # Machine-readable frontmatter/schema diagnostics
+openspec list --json                          # List all active changes
+openspec status --change <name> --json        # Artifact completion status
+openspec validate --all --json                # Structural validation
+openspec show <name> --json                   # Change details
+openspec instructions <artifact> --change <name> --json  # Artifact guidance
+openspec archive <name> --yes                 # Archive completed change
 ```
-
-## Token-Conscious Usage
-
-Prefer `-q` (or `--quiet`) when you only need the command outcome and exit code:
-
-```bash
-anvil status <feature-id> -q   # Preferred for token-conscious runs
-anvil check <feature-id> -q    # Preferred for token-conscious runs
-anvil lint <feature-id> -q     # Preferred for token-conscious runs
-```
-
-`-q` is supported by `status`, `check`, and `lint`, and is mutually exclusive with `--output` / `--json`.
-
-## Install CLI
-
-```bash
-sh scripts/install.sh install    # Install to ~/.local/bin/anvil
-sh scripts/install.sh uninstall  # Remove managed install
-```
-
-```powershell
-.\scripts\install.ps1 install    # Install to $HOME\.local\bin\anvil.cmd
-.\scripts\install.ps1 uninstall  # Remove managed install
-```
-
-If `~/.local/bin` is not on your PATH, add it in your shell profile.
 
 ## Repository Layout
 
-- `process/anvil/` - ANVIL process definition, templates, and README.
-- `.claude/skills/anvil/` - Canonical ANVIL skill source for Claude Code.
-- `skills/anvil/` - Generated mirror for non-Claude tooling.
-- `.claude/hooks/` - Deterministic Claude guardrails and async lint hook.
+- `openspec/` - OpenSpec project root (specs, changes, config).
+- `.claude/skills/proof-agent/` - Proof-oriented orchestrator skill and prompts.
+- `.claude/skills/openspec-*/` - Generated OpenSpec skills (propose, apply, archive, explore).
+- `.claude/skills/reflect/` - Conversation reflection skill.
+- `.claude/hooks/` - Deterministic Claude guardrails and async validation.
 - `.claude/settings.json` - Hook configuration.
-- `bin/anvil` - CLI entry point (Bun runtime).
-- `bin/sync-anvil-skill` - Sync/check helper for skill mirror consistency.
-- `scripts/install.sh` / `scripts/install.ps1` - installer entry points.
-- `work/features/` - Generated feature workspaces.
+- `.claude/commands/opsx/` - OpenSpec slash commands.
 - `docs/` - Documentation index.
 
 ## Contributing
