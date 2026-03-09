@@ -56,6 +56,7 @@ async function main(): Promise<void> {
 
   if (relPosix.startsWith("openspec/schemas/")) {
     emitDeny("Blocked edits to openspec/schemas/ (use openspec schema commands instead)");
+    return;
   }
 }
 

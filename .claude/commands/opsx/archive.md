@@ -153,5 +153,5 @@ Target archive directory already exists.
 - Don't block archive on warnings - just inform and confirm
 - Preserve .openspec.yaml when moving to archive (it moves with the directory)
 - Show clear summary of what happened
-- If sync is requested, use the Skill tool to invoke `openspec-sync-specs` (agent-driven)
+- If sync is requested, use the Agent tool (subagent_type: "general-purpose") to invoke `openspec-sync-specs` via the Skill tool
 - If delta specs exist, always run the sync assessment and show the combined summary before prompting
