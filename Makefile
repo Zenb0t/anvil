@@ -1,9 +1,12 @@
 SHELL := /bin/sh
 
-.PHONY: install uninstall
+.PHONY: install validate status
 
 install:
-	@sh scripts/install.sh install
+	npm install
 
-uninstall:
-	@sh scripts/install.sh uninstall
+validate:
+	npx openspec validate --all --json
+
+status:
+	npx openspec status --json

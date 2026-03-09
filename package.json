@@ -1,23 +1,16 @@
 {
   "name": "anvil",
-  "version": "0.3.0",
-  "description": "ANVIL - Agent Navigated Verified Implementation Lifecycle. Simplified agentic SDLC with phase-gated feature delivery.",
+  "version": "0.4.0",
+  "description": "ANVIL - Agent Navigated Verified Implementation Lifecycle. OpenSpec-powered proof-oriented development with falsification-first verification.",
   "type": "module",
   "private": true,
   "license": "MIT",
-  "bin": {
-    "anvil": "bin/anvil",
-    "sync-anvil-skill": "bin/sync-anvil-skill"
-  },
   "scripts": {
-    "anvil": "bun bin/anvil",
-    "lint:anvil": "bun bin/anvil lint --output text",
-    "check:skills": "bun bin/sync-anvil-skill check"
-  },
-  "dependencies": {
-    "yaml": "^2.8.1"
+    "validate": "openspec validate --all --json",
+    "status": "openspec status --json"
   },
   "devDependencies": {
+    "@fission-ai/openspec": "^1.2.0",
     "bun-types": "^1.3.10"
   }
 }

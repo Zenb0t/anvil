@@ -4,28 +4,31 @@ Agent Navigated Verified Implementation Lifecycle.
 
 ## Skills
 
-- **anvil**: ANVIL orchestrator. Canonical source is `.claude/skills/anvil/SKILL.md`. `skills/anvil/` is a generated mirror via `bin/sync-anvil-skill`.
+- **proof-agent**: Proof-oriented orchestrator wrapping OpenSpec with falsification-first verification. Canonical source is `.claude/skills/proof-agent/SKILL.md`.
+- **reflect**: Conversation reflection for persistent learnings. Source is `.claude/skills/reflect/SKILL.md`.
+- **openspec-\***: Generated OpenSpec skills (propose, apply, archive, explore) in `.claude/skills/`.
 
 ## Project Conventions
 
 - Anvil is consumed by LLM agents, not humans. Optimize output for context density and token efficiency.
-- CLI lives at `bin/anvil` (Bun runtime).
-- Process definition lives in `process/anvil/`.
-- Feature workspaces live in `work/features/`.
-- Templates live in `process/anvil/templates/feature/`.
-- Canonical ANVIL skill files live in `.claude/skills/anvil/`.
+- Process powered by OpenSpec CLI (`npx openspec`).
+- Specifications live in `openspec/specs/`.
+- Active changes live in `openspec/changes/`.
+- Archived changes live in `openspec/changes/archive/`.
+- Project config lives in `openspec/config.yaml`.
 - Deterministic Claude hooks are configured in `.claude/settings.json`.
-- State is derived. Never manually edit `state.yaml`.
+- State is queried via `openspec status --json`, never stored in files.
 
 ## Bug Fix Workflow
 
-Bug fixes do not go through the full anvil process:
+Bug fixes do not go through the full proof-agent process:
 1. Create a GitHub issue describing the bug.
 2. Branch from main (`fix/<short-description>`).
-3. Apply direct patches. No feature scaffolding and no phase flow.
+3. Apply direct patches. No change scaffolding and no artifact flow.
 4. Open a PR linked to the issue (`Closes #N`).
 
 ## Testing Conventions
 
-- Batch test fixtures at top and cleanup at bottom (Windows Git Bash forks are slow).
-- Prefer invoking `anvil ... --output json` for orchestrators and hooks.
+- Acceptance tests live in `test/acceptance/` (created by proof-agent pre-verify step).
+- Use bun:test framework.
+- Prefer invoking `openspec validate --all --json` for structural validation.

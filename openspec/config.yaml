@@ -1,0 +1,26 @@
+schema: spec-driven
+
+context: |
+  Proof-oriented development lifecycle. Anvil project.
+  Bun runtime, TypeScript. Tests use bun:test.
+  Specs must be falsifiable — every behavioral requirement needs a testable invariant.
+  Write acceptance tests BEFORE implementation code (Red-Green-Refactor).
+
+rules:
+  proposal:
+    - Include explicit non-goals to prevent scope creep
+    - Define measurable success criteria
+  specs:
+    - Every behavioral requirement must have a testable invariant
+    - Name illegal state transitions explicitly — these become refutation tests
+    - Plant hardening seeds in three categories: security, performance, observability
+    - Each requirement must be independently falsifiable
+  design:
+    - Include an ETR (Expected Test Results) matrix mapping each spec requirement to acceptance test files
+    - Classify each ETR claim as functional (per-slice) or cross-cutting (post-slices)
+    - Include acceptance test strategy — what tests prove each requirement, what would disprove it
+    - Reference project test framework conventions (bun:test, test/ directory)
+  tasks:
+    - Each task references the ETR claims it satisfies
+    - Tasks follow TDD cycle — RED acceptance tests, implement, GREEN, unit tests
+    - Slice tasks by ETR claims, not by file or module

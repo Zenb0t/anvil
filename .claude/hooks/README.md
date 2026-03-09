@@ -1,6 +1,6 @@
-# Claude Hooks for ANVIL Guardrails
+# Claude Hooks
 
-This repository uses deterministic Claude Code hooks to enforce high-confidence safety rules.
+Deterministic Claude Code hooks for safety and validation.
 All hooks run with Bun (`bun <hook-script>.ts`) for cross-shell portability.
 
 ## Enabled Guardrails
@@ -13,14 +13,8 @@ All hooks run with Bun (`bun <hook-script>.ts`) for cross-shell portability.
    - Blocks edits under `.git/`.
    - Blocks edits to `.claude/settings.local.json`.
    - Blocks edits inside `.claude/worktrees/`.
-   - Blocks manual edits to derived `work/features/<id>/state.yaml`.
+   - Blocks edits to `openspec/schemas/` (use `openspec schema` commands instead).
 
-3. `run_anvil_lint_async.ts` (PostToolUse async, matcher: `Edit|Write|MultiEdit`)
-   - Runs `bin/anvil lint` asynchronously after writes.
+3. `run_openspec_validate_async.ts` (PostToolUse async, matcher: `Edit|Write|MultiEdit`)
+   - Runs `openspec validate --all --json` asynchronously after writes.
    - Emits a system message only on failure.
-
-## Migration / Rollout Notes
-
-- Start with the high-confidence destructive Bash denylist.
-- Expand/adjust path rules based on observed false positives.
-- Keep async validation lightweight to avoid noisy feedback loops.
