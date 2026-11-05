@@ -1,0 +1,28 @@
+# Copy to ~/.claude/pr-review/config.yaml (pr-orchestrator writes it on first run if missing).
+# Real config stays out of this repo: it names private repos and tracker access.
+
+defaults:
+  max_parallel_reviews: 4
+  include_bot_labels: [needs-review]   # bot PRs reviewed only with one of these labels
+  sensitive_paths:                     # raise blast radius to at least "shared"
+    - "**/auth/**"
+    - "**/migrations/**"
+    - "**/*.sql"
+    - ".github/workflows/**"
+    - "infra/**"
+    - "**/package.json"
+    - "**/*.lock"
+
+repos:
+  - repo: owner/service
+    tracker:
+      type: github                     # tickets are GitHub issues in this repo
+
+  - repo: owner/work-api
+    local_path: C:/Users/me/work/api   # optional: reuse an existing clone
+    tracker:
+      type: linear                     # github | linear | jira | other
+      ticket_pattern: "[A-Z]+-\\d+"    # how tickets appear in PR body, branch, commits
+      access: "Linear MCP: get the issue by identifier; read description and acceptance criteria"
+    sensitive_paths:
+      - "src/billing/**"
