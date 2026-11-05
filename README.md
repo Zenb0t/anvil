@@ -19,3 +19,20 @@ pr-orchestrator   sweep: find PRs lacking a current review, check cross-PR overl
 Install: `./install.sh` (copies into `~/.claude`). First run of `pr-orchestrator` interviews you for repos and tracker access when `~/.claude/pr-review/config.yaml` is missing.
 
 Run: `/loop 30m use the pr-orchestrator agent to run a sweep`, or a scheduled routine with the same prompt.
+
+## Tidy
+
+Finds small structure-only improvements (Kent Beck's _tidyings_) in the hotspots of your configured repos, makes each one in isolation, proves behaviour unchanged, and scores it against ISO/IEC 25010 maintainability.
+
+```
+tidy-orchestrator   sweep: sync outcomes, enforce PR budget, dispatch, publish the report artifact
+├─ tidy-scout       one repo, read-only: hotspots (churn × complexity) → ranked candidates and ideas
+└─ tidy-maker       one tidying: baseline → safety net → tidy → verify → measure → proposal (or draft PR)
+```
+
+- Modes per repo: `report` (proposals in a claude.ai artifact, nothing pushed) or `draft-pr`. Act on a report with `promote <id>` or `decline <id> <reason>`; declines are never proposed again.
+- Scope is judged, not capped: past ~300 lines or 7 files, or across domains, the maker runs an overreach review (trim, split or keep).
+- Language-agnostic agents; language specifics live in `tidy/languages/` (contract: `CONTRACT.md`, first pack: TypeScript). Tidying kinds: `tidy/tidyings/`. Judgement: `tidy/rubric.md`.
+- State: `~/.claude/tidy/ledger.yaml` and the `tidy` label on PRs.
+
+Run: `use the tidy-orchestrator agent to run a sweep`, or `/loop 1d` with the same prompt.

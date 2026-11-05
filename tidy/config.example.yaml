@@ -1,0 +1,33 @@
+# Copy to ~/.claude/tidy/config.yaml (tidy-orchestrator writes it on first run if missing).
+# Real config stays out of this repo: it names private repos.
+
+defaults:
+  mode: report                 # report: proposals in an artifact, nothing pushed | draft-pr: also open draft PRs
+  max_proposals: 3             # proposals made per repo per sweep
+  max_open_prs: 1              # draft-pr mode: open tidy PRs allowed per repo at once
+  max_parallel_makers: 2
+  hotspot_window_days: 90      # churn window for hotspot ranking
+  scrutiny:                    # beyond either number → overreach review (see tidy/rubric.md), not a rejection
+    lines: 300
+    files: 7
+  tidyings: all                # all, or a list of kinds from tidy/tidyings/
+  exclude_paths:
+    - "**/generated/**"
+    - "**/__generated__/**"
+    - "**/*.d.ts"
+    - "**/migrations/**"
+
+repos:
+  - repo: owner/web-app
+    language: typescript       # must match a file in tidy/languages/
+    local_path: C:/Users/me/work/web-app   # optional: reuse an existing clone
+    focus:                     # optional: look only here
+      - "src/billing/**"
+
+  - repo: owner/sandbox
+    language: typescript
+    mode: draft-pr
+    tidyings: [dead-code, guard-clauses, explaining-names]
+    commands:                  # optional: override what the language pack detects
+      typecheck: pnpm -s typecheck
+      test: pnpm -s test --run
