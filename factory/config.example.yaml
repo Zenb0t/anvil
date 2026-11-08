@@ -1,0 +1,32 @@
+# Copy to ~/.claude/factory/config.yaml. Real config stays out of this repo: it names private boards.
+
+board:
+  type: notion                     # github | notion | linear | jira | other
+  epic: "SYNC-412"                 # the epic whose sub-tickets feed the floor
+  access: "Notion MCP: query the Tickets database filtered by Epic"
+  # Map this board's columns to lifecycle states (factory/lifecycle.yaml).
+  columns:
+    Backlog: backlog
+    Ready: ready
+    In progress: [planning, building, blocked, rework]
+    In review: in_qc
+    Ready to merge: merge
+    Done: shipped
+  dependencies: "Blocked by"       # relation or field that lists a ticket's dependencies
+  area: "Area"                     # property used by the overlap gate
+
+repo:
+  name: owner/app
+  local_path: ~/work/app           # lanes create worktrees from here
+  branch: "ticket-{id}-{slug}"     # Herdr Floor links a pane to a ticket through this pattern
+
+pool:
+  max_lanes: 1                     # start with one; raise it step by step (see BLUEPRINT.md)
+  agent: claude
+  plan_skill: ticket-to-plan       # your skill that writes the commit plan into the ticket
+  qc_agent: pr-reviewer            # from anvil/pr-review
+
+limits:
+  qc_queue_max: 2
+  usage_reserve: 20                # percent of the usage window kept free
+  context_restart: 70              # percent; lane restarts fresh before its next ticket

@@ -36,3 +36,16 @@ tidy-orchestrator   sweep: sync outcomes, enforce PR budget, dispatch, publish t
 - State: `~/.claude/tidy/ledger.yaml` and the `tidy` label on PRs.
 
 Run: `use the tidy-orchestrator agent to run a sweep`, or `/loop 1d` with the same prompt.
+
+## Factory (blueprint)
+
+Tickets from any board in, reviewed PRs out. One dispatcher feeds a pool of agent lanes (herdr panes); each lane splits a ticket into a plan of logical commits, builds them, and hands the PR to `pr-reviewer`. Not runnable yet: this is the design to build against, one step at a time.
+
+```
+dispatcher   one loop for the pool: gates (lane, ready, overlap, QC back-pressure, usage reserve, context), rework routing, event log
+└─ lane      one ticket: plan into the ticket → one commit per plan item → PR
+   └─ QC     pr-reviewer: merge or rework
+```
+
+- Rules: `factory/lifecycle.yaml` (states, transitions, gates, plan format, event log). Design and scaling ladder: `factory/BLUEPRINT.md`.
+- Config schema: `factory/config.example.yaml`. Interactive mock of the floor: `factory/mock/herdr-floor.html`.

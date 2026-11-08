@@ -1,0 +1,82 @@
+# The factory lifecycle: the single source of truth for every agent and for the Herdr Floor view.
+# Agents read this file; they do not restate the rules in their prompts.
+# A ticket is in exactly one state. Trackers map their own columns to these states in config.yaml.
+
+version: 1
+
+states:
+  backlog:
+    owner: tracker
+    meaning: At least one dependency has not shipped.
+  ready:
+    owner: dispatcher
+    meaning: Every dependency has shipped. Waiting for the dispatcher to hand it to a lane.
+  planning:
+    owner: lane
+    meaning: The lane writes the commit plan into the ticket.
+  building:
+    owner: lane
+    meaning: The lane works through the plan, one commit per plan item.
+  blocked:
+    owner: human
+    meaning: The lane's agent is waiting on a question or a permission.
+  in_qc:
+    owner: qc
+    meaning: A PR is open and the reviewer is checking it.
+  rework:
+    owner: lane
+    meaning: QC asked for changes. The ticket goes back to the lane that built it.
+  merge:
+    owner: human
+    meaning: QC passed. Waiting for a person to merge. Agents never merge.
+  shipped:
+    owner: tracker
+    meaning: Merged.
+
+transitions:
+  - { from: backlog,  to: ready,    by: dispatcher, when: every dependency is shipped }
+  - { from: ready,    to: planning, by: dispatcher, when: every gate is green, does: [claim ticket, assign lane, create branch] }
+  - { from: planning, to: building, by: lane,       when: the plan is written to the ticket }
+  - { from: building, to: blocked,  by: herdr,      when: pane agent_state is blocked }
+  - { from: blocked,  to: building, by: herdr,      when: pane agent_state is working }
+  - { from: building, to: in_qc,    by: lane,       when: every plan item has a commit, does: [push branch, open PR] }
+  - { from: in_qc,    to: rework,   by: qc,         when: verdict is changes requested, does: [append a fix item to the plan] }
+  - { from: rework,   to: building, by: dispatcher, when: the original lane is free, before any new ticket }
+  - { from: in_qc,    to: merge,    by: qc,         when: verdict is ready }
+  - { from: merge,    to: shipped,  by: tracker,    when: the PR is merged }
+
+# Checked by the dispatcher, in this order, before ready -> planning.
+# The first red gate is the hold reason written to the event log.
+gates:
+  - id: lane
+    passes_when: a lane in the pool is idle
+  - id: ready
+    passes_when: at least one ticket is ready
+  - id: overlap
+    passes_when: the ticket's area is not being built by another lane
+    note: area comes from the ticket (label or property) or, later, from the paths in its plan
+  - id: qc
+    passes_when: tickets waiting for QC < limits.qc_queue_max
+    note: back-pressure; this is what slows the floor down
+  - id: usage
+    passes_when: usage in the current window < 100% - limits.usage_reserve
+  - id: context
+    passes_when: the lane's context < limits.context_restart
+    on_red: restart the lane with a fresh session, then check again
+
+# Rework skips the qc and overlap gates (it is already in flight) but still needs usage.
+rework_gates: [lane, usage]
+
+plan:
+  where: a "Plan" section on the ticket, as a checklist
+  item: one logical commit, written as its commit message
+  item_format: "- [ ] <type>(<scope>): <summary>"
+  rules:
+    - each item builds and passes tests on its own
+    - the lane ticks an item when its commit lands, using the same message
+    - rework appends items; it never rewrites ticked ones
+
+# Every transition and hold is appended as one JSON line. Herdr Floor reads this log.
+events:
+  path: ~/.claude/factory/events.jsonl
+  line: '{"t":"<iso8601>","type":"<transition|hold|lane>","ticket":"<id|null>","lane":"<pane id|null>","from":"<state>","to":"<state>","detail":"<text>"}'
