@@ -5,6 +5,9 @@
 version: 1
 
 states:
+  needs_spec:
+    owner: human
+    meaning: Failed the spec check. The dispatcher commented what is missing on the ticket.
   backlog:
     owner: tracker
     meaning: At least one dependency has not shipped.
@@ -20,6 +23,9 @@ states:
   blocked:
     owner: human
     meaning: The lane's agent is waiting on a question or a permission.
+  ci:
+    owner: ci
+    meaning: PR open; lint, type checks, existing tests and the ticket's new tests run. The lane waits on it.
   in_qc:
     owner: qc
     meaning: A PR is open and the reviewer is checking it.
@@ -34,16 +40,29 @@ states:
     meaning: Merged.
 
 transitions:
-  - { from: backlog,  to: ready,    by: dispatcher, when: every dependency is shipped }
+  - { from: needs_spec, to: backlog, by: human,     when: the ticket is edited, does: [rerun spec check] }
+  - { from: backlog,  to: needs_spec, by: dispatcher, when: spec check fails, does: [comment what is missing] }
+  - { from: backlog,  to: ready,    by: dispatcher, when: every dependency is shipped and the spec check passes }
   - { from: ready,    to: planning, by: dispatcher, when: every gate is green, does: [claim ticket, assign lane, create branch] }
   - { from: planning, to: building, by: lane,       when: the plan is written to the ticket }
   - { from: building, to: blocked,  by: herdr,      when: pane agent_state is blocked }
   - { from: blocked,  to: building, by: herdr,      when: pane agent_state is working }
-  - { from: building, to: in_qc,    by: lane,       when: every plan item has a commit, does: [push branch, open PR] }
+  - { from: building, to: ci,       by: lane,       when: every plan item has a commit, does: [push branch, open PR] }
+  - { from: ci,       to: building, by: ci,         when: CI is red, does: [append a fix item to the plan] }
+  - { from: ci,       to: in_qc,    by: ci,         when: CI is green }
   - { from: in_qc,    to: rework,   by: qc,         when: verdict is changes requested, does: [append a fix item to the plan] }
   - { from: rework,   to: building, by: dispatcher, when: the original lane is free, before any new ticket }
   - { from: in_qc,    to: merge,    by: qc,         when: verdict is ready }
   - { from: merge,    to: shipped,  by: tracker,    when: the PR is merged }
+
+# Run on every backlog ticket, before it can become ready. Catching a weak ticket here is far
+# cheaper than finding it at QC.
+spec_check:
+  requires:
+    - acceptance criteria, each one testable
+    - scope that fits one PR (the plan skill can write at most limits.max_plan_items commits)
+    - dependencies listed, or explicitly none
+  on_fail: move to needs_spec and comment the missing items
 
 # Checked by the dispatcher, in this order, before ready -> planning.
 # The first red gate is the hold reason written to the event log.
@@ -72,9 +91,38 @@ plan:
   item: one logical commit, written as its commit message
   item_format: "- [ ] <type>(<scope>): <summary>"
   rules:
-    - each item builds and passes tests on its own
+    - each item builds and the existing tests pass after it
+    - each item adds or updates tests for the behaviour it changes
     - the lane ticks an item when its commit lands, using the same message
     - rework appends items; it never rewrites ticked ones
+
+# What every lane loads before planning. Paths per repo live in config.yaml.
+context:
+  - the ticket, including acceptance criteria and the plan
+  - repo conventions (config.repo.context.conventions)
+  - architecture decision records (config.repo.context.adrs)
+
+# Current policy. A full access model (secrets, environments, tool permissions) is still to be defined.
+access:
+  lanes_may: [push to their own ticket branch, open PRs, comment on their ticket]
+  lanes_may_not: [merge, push to the default branch, change CI config, edit other tickets]
+  qc_may_not: [approve, merge]
+
+# Derived from the event log; Herdr Floor shows them, and they decide when to scale (BLUEPRINT.md).
+metrics:
+  lead_time: ready -> shipped
+  cycle_time: time spent in each state
+  ci_first_pass: share of PRs green on the first CI run
+  qc_first_pass: share of PRs passing QC on the first review
+  rework_rate: rework items per shipped ticket
+  cost: usage spent per shipped ticket
+  escapes: bugs filed against a shipped ticket within 14 days
+
+# Rejections are inputs, not just outcomes.
+improvement:
+  - every CI failure and QC rejection is logged with a category (spec, plan, tests, conventions, other)
+  - review the categories weekly; fix the cause in the plan skill, the conventions, or the spec check
+  - replay past tickets after a change, as evals/ does for pr-reviewer
 
 # Every transition and hold is appended as one JSON line. Herdr Floor reads this log.
 events:

@@ -42,8 +42,8 @@ Run: `use the tidy-orchestrator agent to run a sweep`, or `/loop 1d` with the sa
 Tickets from any board in, reviewed PRs out. One dispatcher feeds a pool of agent lanes (herdr panes); each lane splits a ticket into a plan of logical commits, builds them, and hands the PR to `pr-reviewer`. Not runnable yet: this is the design to build against, one step at a time.
 
 ```
-dispatcher   one loop for the pool: gates (lane, ready, overlap, QC back-pressure, usage reserve, context), rework routing, event log
-└─ lane      one ticket: plan into the ticket → one commit per plan item → PR
+dispatcher   one loop for the pool: spec check at intake, gates (lane, ready, overlap, QC back-pressure, usage reserve, context), rework routing, event log
+└─ lane      one ticket: plan into the ticket → one commit per plan item, each with tests → PR → CI
    └─ QC     pr-reviewer: merge or rework
 ```
 

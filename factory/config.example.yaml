@@ -19,6 +19,10 @@ repo:
   name: owner/app
   local_path: ~/work/app           # lanes create worktrees from here
   branch: "ticket-{id}-{slug}"     # Herdr Floor links a pane to a ticket through this pattern
+  ci: "pnpm lint && pnpm typecheck && pnpm test"   # what the CI step runs, locally or as the PR check
+  context:
+    conventions: [CLAUDE.md, CONTRIBUTING.md]
+    adrs: docs/adr/
 
 pool:
   max_lanes: 1                     # start with one; raise it step by step (see BLUEPRINT.md)
@@ -30,3 +34,4 @@ limits:
   qc_queue_max: 2
   usage_reserve: 20                # percent of the usage window kept free
   context_restart: 70              # percent; lane restarts fresh before its next ticket
+  max_plan_items: 7                # spec check: a bigger ticket must be split first

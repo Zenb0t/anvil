@@ -23,6 +23,7 @@
   --s-rework: #d9731a;
   --s-review: #6c5bd4;
   --s-done: #3a8a5a;
+  --s-ci: #0f7f86;
   --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
   --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
@@ -32,14 +33,14 @@
   :root:not([data-theme="light"]) {
     --bg: #0f1318; --surface: #181e25; --sunk: #12171d; --ink: #e7ecf1; --muted: #93a0ad; --line: #34404c;
     --accent: #f5c02a; --accent-ink: #f5c02a; --on-accent: #1d1600;
-    --s-wait: #6b7682; --s-ready: #6ca0f2; --s-build: #f5c02a; --s-block: #f06a5a; --s-rework: #f39a4a; --s-review: #9a8cf0; --s-done: #5dbb83;
+    --s-wait: #6b7682; --s-ready: #6ca0f2; --s-build: #f5c02a; --s-block: #f06a5a; --s-rework: #f39a4a; --s-review: #9a8cf0; --s-done: #5dbb83; --s-ci: #3cc0c0;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0f1318; --surface: #181e25; --sunk: #12171d; --ink: #e7ecf1; --muted: #93a0ad; --line: #34404c;
   --accent: #f5c02a; --accent-ink: #f5c02a; --on-accent: #1d1600;
-  --s-wait: #6b7682; --s-ready: #6ca0f2; --s-build: #f5c02a; --s-block: #f06a5a; --s-rework: #f39a4a; --s-review: #9a8cf0; --s-done: #5dbb83;
+  --s-wait: #6b7682; --s-ready: #6ca0f2; --s-build: #f5c02a; --s-block: #f06a5a; --s-rework: #f39a4a; --s-review: #9a8cf0; --s-done: #5dbb83; --s-ci: #3cc0c0;
   color-scheme: dark;
 }
 
@@ -105,6 +106,7 @@ svg.paused .run, svg.paused .light.l-working, svg.paused .plan-dot { animation-p
 .machine { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
 .machine.blocked { stroke: var(--s-block); stroke-width: 2; }
 .machine.idle, .machine.restarting { stroke-dasharray: 5 4; }
+.machine.ci { stroke: var(--s-ci); stroke-width: 1.6; }
 .station { fill: var(--surface); stroke: var(--s-review); stroke-width: 1.5; }
 .dock { fill: var(--surface); stroke: var(--s-done); stroke-width: 1.5; }
 .slot { fill: none; stroke: var(--line); stroke-dasharray: 3 3; }
@@ -161,6 +163,10 @@ svg.paused .run, svg.paused .light.l-working, svg.paused .plan-dot { animation-p
 .c-building text { fill: var(--on-accent); }
 .c-needs-you rect { fill: color-mix(in srgb, var(--s-block) 22%, var(--surface)); stroke: var(--s-block); }
 .c-rework rect { fill: color-mix(in srgb, var(--s-rework) 22%, var(--surface)); stroke: var(--s-rework); }
+.c-needs-spec rect { fill: var(--surface); stroke: var(--s-rework); stroke-dasharray: 3 2; }
+.c-ci rect { fill: color-mix(in srgb, var(--s-ci) 22%, var(--surface)); stroke: var(--s-ci); }
+.light.l-ci { fill: var(--s-ci); animation: blink .5s ease-in-out infinite alternate; }
+.plan-dot.ci { fill: var(--s-ci); }
 .c-qc-queue rect { fill: var(--surface); stroke: var(--s-review); }
 .c-qc rect { fill: color-mix(in srgb, var(--s-review) 28%, var(--surface)); stroke: var(--s-review); }
 .c-shipped rect { fill: color-mix(in srgb, var(--s-done) 18%, var(--surface)); stroke: color-mix(in srgb, var(--s-done) 60%, var(--surface)); }
@@ -292,7 +298,7 @@ const TICKETS = [
     plan: ["feat(outbox): batch uploader", "feat(outbox): retry with backoff", "feat(outbox): wire into SyncService", "test(outbox): offline then online"] },
   { id: 426, short: "Network monitor", area: "net", title: "Detect online and offline transitions", deps: [],
     plan: ["feat(net): NetworkMonitor service", "feat(net): debounce flapping", "test(net): transitions"] },
-  { id: 427, short: "Sync settings", area: "settings",   title: "Sync settings screen", deps: [],
+  { id: 427, short: "Sync settings", area: "settings", spec: false, specFixAt: 16,   title: "Sync settings screen", deps: [],
     plan: ["feat(settings): sync section", "feat(settings): wifi-only toggle", "test(settings): persisted prefs"] },
   { id: 421, short: "Sync indicator", area: "ui",  title: "Sync status indicator in the app bar", deps: [415, 426],
     plan: ["feat(ui): useSyncStatus hook", "feat(ui): app bar badge", "test(ui): indicator states"] },
@@ -300,7 +306,7 @@ const TICKETS = [
     plan: ["feat(sync): field-level merge", "feat(sync): conflict log", "test(sync): concurrent edits"] },
   { id: 422, short: "BG scheduling", area: "platform",   title: "Schedule sync in the background", deps: [418],
     plan: ["feat(ios): BGTaskScheduler job", "feat(android): WorkManager job", "test(bg): schedule contract"] },
-  { id: 424, short: "Sync telemetry", area: "telemetry",  title: "Report sync failures to telemetry", deps: [418],
+  { id: 424, short: "Sync telemetry", area: "telemetry", spec: false, specFixAt: 46,  title: "Report sync failures to telemetry", deps: [418],
     plan: ["feat(telemetry): sync_failed event", "feat(telemetry): sampling"] },
   { id: 423, short: "E2E offline", area: "e2e",     title: "End-to-end offline test suite", deps: [420, 422],
     plan: ["test(e2e): airplane mode flow", "test(e2e): conflict flow", "ci: run e2e on PRs"] },
@@ -325,7 +331,7 @@ function initialState(seed) {
   return {
     t: 0, seed, nextWorkspace: 3, nextPr: 501,
     tickets: Object.fromEntries(TICKETS.map(t => [t.id, {
-      stage: "intake", lane: null, pr: null, qcRounds: 0, commits: t.plan.map(msg => ({ msg, done: false })),
+      stage: t.spec === false ? "needs-spec" : "intake", lane: null, pr: null, qcRounds: 0, ciRounds: 0, readyAt: null, shippedAt: null, commits: t.plan.map(msg => ({ msg, done: false })),
     }])),
     lanes: [createLane("1-1", "claude"), createLane("1-2", "codex"), createLane("2-1", "pi")],
     qc: { ticket: null, progress: 0, last: null },
@@ -352,10 +358,23 @@ function tick(previous) {
   const log = (ticket, text) => { s.log.unshift({ t: s.t, ticket, text }); s.log.length = Math.min(s.log.length, 40); };
 
   stepUsage(s, log);
+  stepIntake(s, log);
   stepQualityControl(s, rand, log);
   stepDispatcher(s, log);
   s.lanes.forEach(lane => stepLane(s, lane, rand, log));
   return s;
+}
+
+/** Spec check at intake, and the moment each ticket becomes ready (for lead time). */
+function stepIntake(s, log) {
+  TICKETS.forEach(t => {
+    const tk = s.tickets[t.id];
+    if (tk.stage === "needs-spec" && s.t >= t.specFixAt) {
+      tk.stage = "intake";
+      log(t.id, "acceptance criteria added, passed the spec check");
+    }
+    if (tk.readyAt === null && isReady(s, t.id)) tk.readyAt = s.t;
+  });
 }
 
 function stepUsage(s, log) {
@@ -367,7 +386,7 @@ function stepUsage(s, log) {
   s.usage.used = Math.min(100, s.usage.used + 0.3 * busy + (s.qc.ticket ? 0.12 : 0));
 }
 
-const ACTIVE_STAGES = ["planning", "building", "rework"];
+const ACTIVE_STAGES = ["planning", "building", "ci", "rework"];
 
 /**
  * The dispatcher's decision for one free lane: every gate, and the ticket
@@ -433,6 +452,7 @@ function stepQualityControl(s, rand, log) {
       ticket.firstVerdict ??= pass;
       if (pass) {
         ticket.stage = "shipped";
+        ticket.shippedAt = s.t;
         s.shipped.push(qc.ticket);
         log(qc.ticket, `passed QC, merged and shipped`);
       } else {
@@ -491,10 +511,27 @@ function stepLane(s, lane, rand, log) {
       log(lane.ticket, `committed ${ticket.commits[index].msg}`);
       if (currentCommit(ticket) === -1) {
         ticket.pr ??= s.nextPr++;
+        ticket.stage = "ci";
+        Object.assign(lane, { status: "ci", ciLeft: 2 + Math.floor(rand() * 2), since: s.t });
+        log(lane.ticket, `PR #${ticket.pr} opened, CI running (lint, types, tests)`);
+      }
+      return;
+    }
+    case "ci": {
+      lane.ciLeft -= 1;
+      if (lane.ciLeft > 0) return;
+      const green = ticket.ciRounds > 0 || rand() < 0.8;
+      ticket.ciRounds += 1;
+      if (green) {
         ticket.stage = "qc-queue";
         s.qcQueue.push(lane.ticket);
-        log(lane.ticket, `PR #${ticket.pr} sent to QC`);
+        log(lane.ticket, `CI green, PR #${ticket.pr} sent to QC`);
         Object.assign(lane, { ticket: null, status: "idle", since: s.t });
+      } else {
+        ticket.stage = "building";
+        ticket.commits.push({ msg: "fix: make the failing test pass", done: false });
+        Object.assign(lane, { status: "working", progress: 0, since: s.t });
+        log(lane.ticket, "CI red: 1 failing test, the lane is fixing it");
       }
       return;
     }
@@ -517,6 +554,13 @@ function approve(previous, laneId) {
   if (!lane || lane.status !== "blocked") return previous;
   Object.assign(lane, { status: "working", ask: null, since: s.t });
   s.log.unshift({ t: s.t, ticket: lane.ticket, text: `you approved, ${lane.agent} ${lane.id} resumed` });
+  return s;
+}
+function fixSpec(previous, id) {
+  if (previous.tickets[id].stage !== "needs-spec") return previous;
+  const s = structuredClone(previous);
+  s.tickets[id].stage = "intake";
+  s.log.unshift({ t: s.t, ticket: id, text: "you marked the spec complete" });
   return s;
 }
 function openLane(previous) {
@@ -550,11 +594,13 @@ function ticketStatus(s, id) {
 }
 
 const STATUS = {
+  "needs-spec":{ label: "Needs spec",     color: "--s-rework", board: "Needs spec" },
   "locked":    { label: "Locked by deps", color: "--s-wait", board: "Backlog" },
   "ready":     { label: "Ready",          color: "--s-ready", board: "Ready" },
   "planning":  { label: "Planning",       color: "--s-build", board: "In progress" },
   "building":  { label: "Building",       color: "--s-build", board: "In progress" },
   "needs-you": { label: "Needs you",      color: "--s-block", board: "In progress" },
+  "ci":        { label: "In CI",          color: "--s-ci", board: "In progress" },
   "rework":    { label: "Rework",         color: "--s-rework", board: "Changes requested" },
   "qc-queue":  { label: "Waiting for QC", color: "--s-review", board: "In review" },
   "qc":        { label: "In QC",          color: "--s-review", board: "In review" },
@@ -564,7 +610,9 @@ const STATUS = {
 function flowStats(s) {
   const decided = TICKETS.filter(t => s.tickets[t.id].firstVerdict !== undefined);
   const firstPass = decided.filter(t => s.tickets[t.id].firstVerdict).length;
+  const leads = s.shipped.map(id => (s.tickets[id].shippedAt - s.tickets[id].readyAt) * MINUTES_PER_TICK);
   return {
+    leadMinutes: leads.length ? Math.round(leads.reduce((a, b) => a + b, 0) / leads.length) : null,
     busy: s.lanes.filter(l => l.ticket).length,
     lanes: s.lanes.length,
     qcWaiting: s.qcQueue.length,
@@ -628,11 +676,15 @@ function cratePosition(s, id, L) {
   const laneIndex = s.lanes.findIndex(l => l.id === tk.lane);
   switch (status) {
     case "locked": return { x: W + 12, y: 34, opacity: 0, status };
+    case "needs-spec": {
+      const i = TICKETS.filter(t => s.tickets[t.id].stage === "needs-spec").findIndex(t => t.id === id);
+      return { x: W - 58 - i * 50, y: 34, opacity: 1, status };
+    }
     case "ready": {
       const i = readyTickets(s).indexOf(id);
       return { x: 10 + Math.min(i, 5) * 50, y: 34, opacity: i < 6 ? 1 : 0, status };
     }
-    case "planning": case "building": case "needs-you":
+    case "planning": case "building": case "needs-you": case "ci":
       return { x: 34, y: L.laneY[laneIndex] + 30, opacity: 1, status };
     case "rework":
       return laneIndex >= 0 ? { x: 270, y: L.laneY[laneIndex] + 30, opacity: 1, status } : { x: 2, y: L.qcY + 60, opacity: 1, status };
@@ -665,7 +717,7 @@ function boardsView(boardKey) {
 function epicView(s, board) {
   const counts = {};
   TICKETS.forEach(t => { const st = ticketStatus(s, t.id); counts[st] = (counts[st] ?? 0) + 1; });
-  const order = ["shipped", "qc", "qc-queue", "building", "needs-you", "planning", "rework", "ready", "locked"];
+  const order = ["shipped", "qc", "qc-queue", "ci", "building", "needs-you", "planning", "rework", "ready", "needs-spec", "locked"];
   const bar = order.filter(k => counts[k]).map(k => `<i style="flex:${counts[k]};background:var(${STATUS[k].color})" title="${STATUS[k].label}: ${counts[k]}"></i>`).join("");
   const f = flowStats(s);
   return `<p class="eyebrow">Epic · from ${board.source} · ${TICKETS.length} tickets</p>
@@ -673,7 +725,7 @@ function epicView(s, board) {
     <div class="progress" role="img" aria-label="${f.shipped} of ${TICKETS.length} shipped">${bar}</div>
     <dl class="stats">
       <div><dt>Lanes busy</dt><dd>${f.busy}/${f.lanes}</dd></div>
-      <div><dt>QC queue</dt><dd>${f.qcWaiting}</dd></div>
+      <div><dt>Lead time</dt><dd>${f.leadMinutes === null ? "—" : `${Math.floor(f.leadMinutes / 60)}h${String(f.leadMinutes % 60).padStart(2, "0")}`}</dd></div>
       <div><dt>First-pass</dt><dd>${f.firstPassRate === null ? "—" : f.firstPassRate + "%"}</dd></div>
       <div><dt>Shipped</dt><dd>${f.shipped}/${TICKETS.length}</dd></div>
     </dl>`;
@@ -718,7 +770,8 @@ function staticView(L, laneCount) {
 function intakeLabelView(s) {
   const locked = TICKETS.filter(t => ticketStatus(s, t.id) === "locked").length;
   const ready = readyTickets(s).length;
-  return `<text class="sub" x="356" y="16" text-anchor="end">${ready} ready · ${locked} locked by deps</text>`;
+  const spec = TICKETS.filter(t => ticketStatus(s, t.id) === "needs-spec").length;
+  return `<text class="sub" x="356" y="16" text-anchor="end">${ready} ready${spec ? ` · ${spec} ${spec === 1 ? "needs" : "need"} spec` : ""} · ${locked} locked</text>`;
 }
 
 function dispatchView(s, board) {
@@ -753,7 +806,7 @@ function dispatchView(s, board) {
 
 function laneView(s, lane, y, board) {
   const status = lane.status;
-  const label = { idle: "idle", planning: "planning", working: "building", blocked: "needs you", restarting: "restarting" }[status];
+  const label = { idle: "idle", planning: "planning", working: "building", blocked: "needs you", restarting: "restarting", ci: "CI running" }[status];
   const ctx = Math.round(lane.context), ctxHot = ctx >= s.limits.contextRestart;
   const parts = [
     `<rect class="machine ${status}" x="24" y="${y}" width="300" height="${LANE_H}" rx="10"/>`,
@@ -788,9 +841,11 @@ function laneView(s, lane, y, board) {
     if (i === current) parts.push(`<rect class="pip-fill" x="${x}" y="${y + 64}" width="${(pw * Math.min(lane.progress, 1)).toFixed(1)}" height="8" rx="2"/>`);
     parts.push(`<rect class="pip ${cls}" x="${x}" y="${y + 64}" width="${pw.toFixed(1)}" height="8" rx="2"/>`);
   });
-  parts.push(status === "blocked"
+  parts.push(status === "ci"
+    ? `<circle class="plan-dot ci" cx="38" cy="${y + 86}" r="3"/><text class="msg" x="48" y="${y + 90}">CI on PR #${tk.pr}: lint · types · tests</text>`
+    : status === "blocked"
     ? `<text class="msg ask" x="34" y="${y + 90}">? ${esc(trunc(lane.ask, 44))}</text>`
-    : `<text class="msg" x="34" y="${y + 90}">${current + 1}/${n} ▸ ${esc(trunc(tk.commits[current].msg, 38))}</text>`);
+    : `<text class="msg" x="34" y="${y + 90}">${current + 1}/${n} ▸ ${esc(trunc(tk.commits[current]?.msg ?? "", 38))}</text>`);
   return parts.join("");
 }
 
@@ -852,7 +907,7 @@ function mapView(s, board) {
       <text class="id" x="${x + 9}" y="${y + 17}" ${st === "building" ? 'style="fill:var(--on-accent)"' : ""}>${board.id(t.id)}${st === "shipped" ? " ✓" : ""}</text>
       <text class="t2" x="${x + 9}" y="${y + 33}" ${st === "building" ? 'style="fill:var(--on-accent)"' : ""}>${esc(t.short)}</text></g>`;
   }).join("");
-  const legend = ["locked", "ready", "building", "needs-you", "rework", "qc", "shipped"].map(k => `<span><i class="sw" style="--c:var(${STATUS[k].color})"></i>${STATUS[k].label}</span>`).join("");
+  const legend = ["needs-spec", "locked", "ready", "building", "needs-you", "rework", "qc", "shipped"].map(k => `<span><i class="sw" style="--c:var(${STATUS[k].color})"></i>${STATUS[k].label}</span>`).join("");
   return `<div style="display:grid;gap:10px">
     <p class="hint">Read top to bottom: each row waits on the row above. ${cp.length} tickets left on the critical path (yellow).</p>
     <div class="legend">${legend}</div>
@@ -863,7 +918,9 @@ function ticketSheet(s, id, board) {
   const t = TICKET[id], tk = s.tickets[id], st = ticketStatus(s, id);
   const lane = s.lanes.find(l => l.id === tk.lane);
   const current = currentCommit(tk);
-  const plan = tk.stage === "intake"
+  const specNote = tk.stage === "needs-spec"
+    ? `<div class="row"><p class="ask" style="flex:1">Spec check failed: no acceptance criteria.</p><button class="btn primary" type="button" data-fixspec="${id}">Mark spec complete</button></div>` : "";
+  const plan = ["intake", "needs-spec"].includes(tk.stage)
     ? `<p class="empty">The plan is written when a lane picks this ticket up.</p>`
     : `<ol class="plan">${tk.commits.map((c, i) => `<li class="${c.done ? "done" : i === current ? "now" : "todo"}"><span class="mk">${c.done ? "✓" : i === current ? "▸" : "○"}</span><span>${esc(c.msg)}</span></li>`).join("")}</ol>`;
   return `<div class="backdrop" data-close></div>
@@ -876,9 +933,11 @@ function ticketSheet(s, id, board) {
       <dt>Lane</dt><dd>${tk.lane ? `${lane ? lane.agent : "closed lane"} · <span class="mono">${tk.lane}</span>` : "—"}</dd>
       <dt>Branch</dt><dd class="mono">${tk.lane ? `ticket-${id}-${t.short.toLowerCase().replace(/[^a-z0-9]+/g, "-")}` : "—"}</dd>
       <dt>PR</dt><dd>${tk.pr ? `<span class="mono">#${tk.pr}</span>` : "—"}</dd>
+      <dt>CI runs</dt><dd>${tk.ciRounds}</dd>
       <dt>QC rounds</dt><dd>${tk.qcRounds}</dd>
     </dl>
-    <div><h3>Plan · one line per commit</h3>${plan}</div>
+    ${specNote}
+    <div><h3>Plan · one line per commit, each with its tests</h3>${plan}</div>
     <div><h3>Waits on</h3>${t.deps.length ? `<div class="tokens">${t.deps.map(d => token(board, s, d)).join("")}</div>` : `<p class="empty">Nothing. It can start right away.</p>`}</div>
     <div><h3>Unblocks</h3>${DEPENDENTS[id].length ? `<div class="tokens">${DEPENDENTS[id].map(d => token(board, s, d)).join("")}</div>` : `<p class="empty">Nothing. It is the end of the line.</p>`}</div>
     <p class="source">Written back to the ${board.source}: status "${STATUS[st].board}", and the commit plan as a checklist on the ticket. Agent state comes from herdr pane ${tk.lane ?? "—"}.</p>
@@ -895,7 +954,7 @@ function laneSheet(s, laneId, board) {
     <div class="sheet-head"><div><span class="mono" style="color:var(--muted);font-weight:700">herdr pane ${lane.id}</span>
       <h2 id="sheet-title">Lane ${lane.id} · ${lane.agent}</h2>
       <span class="hint">Context ${Math.round(lane.context)}% · restarts at ${s.limits.contextRestart}%</span><br>
-      ${lane.status === "blocked" ? chip("needs-you") : lane.ticket ? chip(lane.status === "planning" ? "planning" : "building") : `<span class="chip" style="--c:var(--s-wait)">Idle</span>`}</div>
+      ${lane.status === "blocked" ? chip("needs-you") : lane.ticket ? chip(lane.status === "planning" ? "planning" : lane.status === "ci" ? "ci" : "building") : `<span class="chip" style="--c:var(--s-wait)">Idle</span>`}</div>
       <button class="btn" type="button" data-close>Close</button></div>
     ${lane.status === "blocked" ? `<p class="ask">${esc(lane.ask)}</p>` : ""}
     <dl class="meta">
@@ -913,7 +972,7 @@ function laneSheet(s, laneId, board) {
    SHELL: the only place with timers, mutable UI state and the DOM.
    ===================================================================== */
 
-const SEED = 3, WARM_UP_TICKS = 25;
+const SEED = 21, WARM_UP_TICKS = 26;
 const ui = { sim: runTicks(initialState(SEED), WARM_UP_TICKS), running: true, speed: 1, tab: "factory", sheet: null, board: "notion" };
 const $ = id => document.getElementById(id);
 const ICON_PLAY = `<svg viewBox="0 0 16 16"><path d="M4 2.5v11l9.5-5.5z"/></svg>`;
@@ -930,7 +989,7 @@ function paint(el, html) {
 
 function mountFactory() {
   $("view").innerHTML = `<div style="display:grid;gap:10px">
-    <p class="hint">Each lane is one herdr agent. The dispatcher hands a ready ticket to a free lane only when every gate is green. Lanes split tickets into commits, and QC checks the result. Tap anything.</p>
+    <p class="hint">Tickets pass a spec check at intake. The dispatcher hands a ready ticket to a free lane only when every gate is green. Each lane splits it into commits with tests, runs CI, then QC reviews the PR. Tap anything.</p>
     <div class="floor"><svg id="floor" viewBox="0 0 ${W} 600" role="group" aria-label="Software factory floor">
       <g id="g-static"></g><g id="g-intake"></g><g id="g-dispatch"></g><g id="g-lanes"></g><g id="g-qc"></g><g id="g-ship"></g><g id="g-hits"></g><g id="g-crates"></g>
     </svg></div>
@@ -1014,6 +1073,7 @@ document.addEventListener("click", e => {
   if (el("[data-approve]")) return update({ sim: approve(ui.sim, el("[data-approve]").dataset.approve), sheet: null });
   if (el("[data-close-lane]")) return update({ sim: closeLane(ui.sim, el("[data-close-lane]").dataset.closeLane), sheet: null });
   if (el("[data-limit]")) return update({ sim: changeLimit(ui.sim, el("[data-limit]").dataset.limit, Number(el("[data-limit]").dataset.dir)) });
+  if (el("[data-fixspec]")) return update({ sim: fixSpec(ui.sim, Number(el("[data-fixspec]").dataset.fixspec)), sheet: null });
   if (el("[data-reset]")) return update({ sim: initialState(SEED), running: true });
   if (el("[data-close]")) return update({ sheet: null });
   if (el("[data-ticket]")) return update({ sheet: { kind: "ticket", id: Number(el("[data-ticket]").dataset.ticket) } });
